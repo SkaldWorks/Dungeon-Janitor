@@ -4,19 +4,19 @@ using UnityEngine.EventSystems;
 public class TripwireMinigame : MonoBehaviour
 {
     [Header("Canvas")]
-    [SerializeField] private GameObject minigamePanel;
+    public GameObject minigamePanel;
 
     [Header("Player")]
-    [SerializeField] private PlayerController player;
+    public PlayerController player;
 
     [Header("Wire")]
-    [SerializeField] private RectTransform leftAnchor;
-    [SerializeField] private RectTransform rightAnchor;
-    [SerializeField] private RectTransform draggedEnd;
-    [SerializeField] private TripwireWireGraphic wireGraphic;
+    public RectTransform leftAnchor;
+    public RectTransform rightAnchor;
+    public RectTransform draggedEnd;
+    public TripwireWireGraphic wireGraphic;
 
     [Header("Settings")]
-    [SerializeField] private float successDistance = 40f;
+    public float successDistance = 40f;
 
     private Tripwire currentTripwire;
     private bool isPlaying = false;

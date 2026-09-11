@@ -27,12 +27,12 @@ public class Tripwire : MonoBehaviour, IInteractable
 
     public void OnTouchingPlayer()
     {
-        // You can add highlighting here later.
+        
     }
 
     public void OnNotTouchingPlayer()
     {
-        // Stop highlighting here later.
+
     }
 
     public void CompleteRepair()
