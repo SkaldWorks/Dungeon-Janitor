@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-public class TripwireMinigame : MonoBehaviour
+public class TripwireMinigame : MonoBehaviour, IMinigame
 {
     [Header("Canvas")]
     public GameObject minigamePanel;
@@ -18,7 +18,8 @@ public class TripwireMinigame : MonoBehaviour
     [Header("Settings")]
     public float successDistance = 40f;
 
-    private Tripwire currentTripwire;
+    private StartGame currentSource;
+
     private bool isPlaying = false;
     private bool dragging = false;
 
@@ -37,18 +38,24 @@ public class TripwireMinigame : MonoBehaviour
         if (Input.GetMouseButtonUp(0))
         {
             dragging = false;
-
             CheckForSuccess();
         }
     }
 
-    public void StartMinigame(Tripwire tripwire)
+    public void StartMinigame(StartGame source)
     {
         if (isPlaying)
             return;
 
-        currentTripwire = tripwire;
+        if (source == null)
+        {
+            Debug.LogError("TripwireMinigame was started without a source.", this);
+            return;
+        }
+
+        currentSource = source;
         isPlaying = true;
+        dragging = false;
 
         if (player != null)
             player.freeze = true;
@@ -88,9 +95,11 @@ public class TripwireMinigame : MonoBehaviour
         if (!isPlaying || !dragging)
             return;
 
+        if (draggedEnd == null)
+            return;
+
         Vector3 mousePosition = Input.mousePosition;
 
-        // Keep the dragged point at the same screen depth.
         mousePosition.z = 0f;
 
         draggedEnd.position = mousePosition;
@@ -120,8 +129,6 @@ public class TripwireMinigame : MonoBehaviour
         }
         else
         {
-            // Failed placement.
-            // Put the wire back at the starting position.
             ResetWire();
         }
     }
@@ -134,9 +141,10 @@ public class TripwireMinigame : MonoBehaviour
         isPlaying = false;
         dragging = false;
 
-        if (currentTripwire != null)
+        // minigame was completed.
+        if (currentSource != null)
         {
-            currentTripwire.CompleteRepair();
+            currentSource.CompleteRepair();
         }
 
         if (minigamePanel != null)
@@ -145,6 +153,23 @@ public class TripwireMinigame : MonoBehaviour
         if (player != null)
             player.freeze = false;
 
-        currentTripwire = null;
+        currentSource = null;
+    }
+
+    public void CancelMinigame()
+    {
+        if (!isPlaying)
+            return;
+
+        isPlaying = false;
+        dragging = false;
+
+        if (minigamePanel != null)
+            minigamePanel.SetActive(false);
+
+        if (player != null)
+            player.freeze = false;
+
+        currentSource = null;
     }
 }

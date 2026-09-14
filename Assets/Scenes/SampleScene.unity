@@ -119,6 +119,41 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &219516274
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 219516275}
+  m_Layer: 5
+  m_Name: GameObject
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!224 &219516275
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 219516274}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1368833851}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
@@ -858,8 +893,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 782804867}
-  - component: {fileID: 782804868}
   - component: {fileID: 782804869}
+  - component: {fileID: 782804870}
   m_Layer: 0
   m_Name: tripwire
   m_TagString: Untagged
@@ -884,21 +919,6 @@ Transform:
   - {fileID: 748977386}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &782804868
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 782804866}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 922072424d2bf3549981ecb4aa506e10, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Tripwire
-  brokenVisual: {fileID: 1771142424}
-  repairedVisual: {fileID: 748977385}
-  minigame: {fileID: 2086528933}
 --- !u!135 &782804869
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -920,6 +940,23 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 1.0990419
   m_Center: {x: -0.27594545, y: 0, z: 0.10889876}
+--- !u!114 &782804870
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 782804866}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b8911a8c7333f0446bd2fa210e6997be, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::StartGame
+  brokenVisual: {fileID: 1771142424}
+  repairedVisual: {fileID: 748977385}
+  minigame: {fileID: 1482164382}
+  interacted: 0
+  repaired: 0
 --- !u!1 &797556626
 GameObject:
   m_ObjectHideFlags: 0
@@ -1321,7 +1358,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 141bfd2c82c59df46bcbd654d1512f6e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TripwireDragHandle
-  minigame: {fileID: 2086528933}
+  minigame: {fileID: 1482164382}
 --- !u!114 &1065512052
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1548,7 +1585,7 @@ GameObject:
   - component: {fileID: 1368833853}
   - component: {fileID: 1368833852}
   m_Layer: 5
-  m_Name: Panel
+  m_Name: TripwirePanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1561,7 +1598,7 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1368833850}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -1569,12 +1606,13 @@ RectTransform:
   - {fileID: 2005883219}
   - {fileID: 1328389800}
   - {fileID: 1558065186}
-  m_Father: {fileID: 2086528937}
+  - {fileID: 219516275}
+  m_Father: {fileID: 1482164381}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
+  m_SizeDelta: {x: 1820, y: 980}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1368833852
 MonoBehaviour:
@@ -1614,6 +1652,62 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1368833850}
   m_CullTransparentMesh: 1
+--- !u!1 &1482164380
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1482164381}
+  - component: {fileID: 1482164382}
+  m_Layer: 5
+  m_Name: TripwireGame
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1482164381
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1482164380}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1368833851}
+  m_Father: {fileID: 2006669052}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1482164382
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1482164380}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9ff95add5aca67a4bac721d3f6dbcbf0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TripwireMinigame
+  minigamePanel: {fileID: 1368833850}
+  player: {fileID: 524899268}
+  leftAnchor: {fileID: 1558065186}
+  rightAnchor: {fileID: 1328389800}
+  draggedEnd: {fileID: 1065512050}
+  wireGraphic: {fileID: 2005883218}
+  successDistance: 40
 --- !u!1 &1558065185
 GameObject:
   m_ObjectHideFlags: 0
@@ -2198,6 +2292,42 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2005883217}
   m_CullTransparentMesh: 1
+--- !u!1 &2006669051
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2006669052}
+  m_Layer: 5
+  m_Name: Games
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &2006669052
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2006669051}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1482164381}
+  m_Father: {fileID: 2086528937}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &2086528932
 GameObject:
   m_ObjectHideFlags: 0
@@ -2210,33 +2340,13 @@ GameObject:
   - component: {fileID: 2086528936}
   - component: {fileID: 2086528935}
   - component: {fileID: 2086528934}
-  - component: {fileID: 2086528933}
   m_Layer: 5
-  m_Name: TestGame
+  m_Name: Canvas
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &2086528933
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2086528932}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9ff95add5aca67a4bac721d3f6dbcbf0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TripwireMinigame
-  minigamePanel: {fileID: 1368833850}
-  player: {fileID: 524899268}
-  leftAnchor: {fileID: 1558065186}
-  rightAnchor: {fileID: 1328389800}
-  draggedEnd: {fileID: 1065512050}
-  wireGraphic: {fileID: 2005883218}
-  successDistance: 40
 --- !u!114 &2086528934
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2312,8 +2422,8 @@ RectTransform:
   m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1368833851}
   - {fileID: 965404913}
+  - {fileID: 2006669052}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}

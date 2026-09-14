@@ -72,13 +72,14 @@ public class Bezier_Viz : MonoBehaviour
         List<Vector2> pts = new List<Vector2>();
         for (int i = 0; i < mPointGameObjects.Count; i++)
         {
-            pts.Add(mPointGameObjects[i].transform.position);
+            pts.Add(mPointGameObjects[i].GetComponent<RectTransform>().anchoredPosition);        
         }
         //set line renderer for strainght lines between control points
         lineRenderer.positionCount = pts.Count;
-        for (int i = 0; i < pts.Count; i++)
+        for (int i = 0; i < mPointGameObjects.Count; i++)
         {
-            lineRenderer.SetPosition(i, pts[i]);
+            RectTransform rect = mPointGameObjects[i].GetComponent<RectTransform>();
+            pts.Add(rect.anchoredPosition);
         }
 
         //draw bezier curve
@@ -121,5 +122,20 @@ public class Bezier_Viz : MonoBehaviour
         obj.GetComponent<RectTransform>().anchoredPosition = p;
         obj.name = "ControlPoint_" + mPointGameObjects.Count.ToString();
         mPointGameObjects.Add(obj);
+    }
+
+    public List<Vector2> GetControlPoints()
+    {
+        List<Vector2> points = new List<Vector2>();
+
+        for (int i = 0; i < mPointGameObjects.Count; i++)
+        {
+            RectTransform rect =
+                mPointGameObjects[i].GetComponent<RectTransform>();
+
+            points.Add(rect.anchoredPosition);
+        }
+
+        return points;
     }
 }
