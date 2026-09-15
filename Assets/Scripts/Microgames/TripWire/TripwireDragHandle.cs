@@ -5,7 +5,7 @@ public class TripwireDragHandle : MonoBehaviour,
     IPointerDownHandler,
     IDragHandler
 {
-    [SerializeField] private TripwireMinigame minigame;
+    public TripwireMinigame minigame;
 
     public void OnPointerDown(PointerEventData eventData)
     {

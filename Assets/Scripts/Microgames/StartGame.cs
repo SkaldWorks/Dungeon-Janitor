@@ -3,14 +3,16 @@ using UnityEngine;
 public class StartGame : MonoBehaviour, IInteractable
 {
     [Header("Visuals")]
-    [SerializeField] private GameObject brokenVisual;
-    [SerializeField] private GameObject repairedVisual;
+    public GameObject brokenVisual;
+    public GameObject repairedVisual;
 
     [Header("Minigame")]
-    [SerializeField] private MonoBehaviour minigame;
+    public MonoBehaviour minigame;
 
     public bool interacted = false;
     public bool repaired = false;
+
+    public Interact interactScript;
 
     private IMinigame minigameInterface;
 
@@ -46,6 +48,10 @@ public class StartGame : MonoBehaviour, IInteractable
 
     public void OnTouchingPlayer()
     {
+        if (!repaired)
+        {
+            interactScript.interactionUI.SetActive(true);
+        }
     }
 
     public void CompleteRepair()

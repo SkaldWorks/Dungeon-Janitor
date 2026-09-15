@@ -3,7 +3,7 @@ using UnityEngine.UI;
 
 public class TripwireWireGraphic : MonoBehaviour
 {
-    [SerializeField] private RectTransform wireRect;
+    public RectTransform wireRect;
 
     public void SetPoints(Vector3 start, Vector3 end)
     {

@@ -36,7 +36,6 @@ public class Interact : MonoBehaviour
 
         if (interactable != null)
         {
-            interactionUI.SetActive(true);
             currentInteractable = interactable;
             currentInteractable.OnTouchingPlayer();
 
