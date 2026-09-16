@@ -14,6 +14,8 @@ public class StartGame : MonoBehaviour, IInteractable
 
     public Interact interactScript;
 
+    public BrokenCount BrokenCount;
+
     private IMinigame minigameInterface;
 
     private void Awake()
@@ -68,6 +70,8 @@ public class StartGame : MonoBehaviour, IInteractable
             repairedVisual.SetActive(true);
 
         Debug.Log("Repaired!");
+
+        BrokenCount.recount();
     }
 }
 
