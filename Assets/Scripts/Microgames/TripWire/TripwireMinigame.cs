@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.EventSystems;
 
 public class TripwireMinigame : MonoBehaviour, IMinigame
 {
@@ -18,10 +17,11 @@ public class TripwireMinigame : MonoBehaviour, IMinigame
     [Header("Settings")]
     public float successDistance = 40f;
 
-    private StartGame currentSource;
+    public Vector2 resetOffset;
 
-    private bool isPlaying = false;
-    private bool dragging = false;
+    private StartGame currentSource;
+    private bool isPlaying;
+    private bool dragging;
 
     private void Start()
     {
@@ -34,7 +34,6 @@ public class TripwireMinigame : MonoBehaviour, IMinigame
         if (!isPlaying)
             return;
 
-        // Mouse button released
         if (Input.GetMouseButtonUp(0))
         {
             dragging = false;
@@ -46,12 +45,6 @@ public class TripwireMinigame : MonoBehaviour, IMinigame
     {
         if (isPlaying)
             return;
-
-        if (source == null)
-        {
-            Debug.LogError("TripwireMinigame was started without a source.", this);
-            return;
-        }
 
         currentSource = source;
         isPlaying = true;
@@ -66,12 +59,18 @@ public class TripwireMinigame : MonoBehaviour, IMinigame
         ResetWire();
     }
 
-    private void ResetWire()
+    public void BeginDragging()
     {
-        if (draggedEnd == null || leftAnchor == null)
+        if (isPlaying)
+            dragging = true;
+    }
+
+    public void DragWire()
+    {
+        if (!isPlaying || !dragging || draggedEnd == null)
             return;
 
-        draggedEnd.position = leftAnchor.position;
+        draggedEnd.position = Input.mousePosition;
 
         if (wireGraphic != null)
         {
@@ -82,27 +81,13 @@ public class TripwireMinigame : MonoBehaviour, IMinigame
         }
     }
 
-    public void BeginDragging()
+    private void ResetWire()
     {
-        if (!isPlaying)
+        if (draggedEnd == null || leftAnchor == null)
             return;
 
-        dragging = true;
-    }
-
-    public void DragWire()
-    {
-        if (!isPlaying || !dragging)
-            return;
-
-        if (draggedEnd == null)
-            return;
-
-        Vector3 mousePosition = Input.mousePosition;
-
-        mousePosition.z = 0f;
-
-        draggedEnd.position = mousePosition;
+        draggedEnd.position =
+            leftAnchor.position + (Vector3)resetOffset;
 
         if (wireGraphic != null)
         {
@@ -124,28 +109,18 @@ public class TripwireMinigame : MonoBehaviour, IMinigame
         );
 
         if (distance <= successDistance)
-        {
             CompleteMinigame();
-        }
         else
-        {
             ResetWire();
-        }
     }
 
     private void CompleteMinigame()
     {
-        if (!isPlaying)
-            return;
-
         isPlaying = false;
         dragging = false;
 
-        // minigame was completed.
         if (currentSource != null)
-        {
             currentSource.CompleteRepair();
-        }
 
         if (minigamePanel != null)
             minigamePanel.SetActive(false);
@@ -163,6 +138,8 @@ public class TripwireMinigame : MonoBehaviour, IMinigame
 
         isPlaying = false;
         dragging = false;
+
+        ResetWire();
 
         if (minigamePanel != null)
             minigamePanel.SetActive(false);
