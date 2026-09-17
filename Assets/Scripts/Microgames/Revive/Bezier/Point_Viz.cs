@@ -1,54 +1,53 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
-public class Point_Viz : MonoBehaviour,
-    IBeginDragHandler,
-    IDragHandler,
-    IEndDragHandler
+public class Point_Viz : MonoBehaviour, IDragHandler
 {
-    private RectTransform rectTransform;
-    private RectTransform parentRect;
-    private Canvas canvas;
+    public bool movable = true;
+    public Color movableColor = Color.white;
+    public Color fixedColor = Color.gray;
 
-    private void Awake()
+    RectTransform rect;
+    RectTransform parent;
+    Canvas canvas;
+    Image image;
+
+    void Awake()
     {
-        rectTransform = GetComponent<RectTransform>();
+        rect = GetComponent<RectTransform>();
+        parent = rect.parent as RectTransform;
         canvas = GetComponentInParent<Canvas>();
-
-        if (rectTransform.parent != null)
-            parentRect = rectTransform.parent as RectTransform;
+        image = GetComponent<Image>();
+        UpdateColor();
     }
 
-    public void OnBeginDrag(PointerEventData eventData)
+    public void SetMovable(bool value)
     {
+        movable = value;
+        UpdateColor();
+    }
+
+    void UpdateColor()
+    {
+        if (image != null)
+            image.color = movable ? movableColor : fixedColor;
     }
 
     public void OnDrag(PointerEventData eventData)
     {
-        if (parentRect == null)
+        if (!movable || parent == null)
             return;
 
-        Camera eventCamera = null;
-
-        if (canvas != null &&
-            canvas.renderMode != RenderMode.ScreenSpaceOverlay)
-        {
-            eventCamera = canvas.worldCamera;
-        }
-
-        Vector2 localPosition;
+        Camera cam = canvas != null &&
+                     canvas.renderMode != RenderMode.ScreenSpaceOverlay
+                     ? canvas.worldCamera
+                     : null;
 
         if (RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                parentRect,
-                eventData.position,
-                eventCamera,
-                out localPosition))
+            parent, eventData.position, cam, out Vector2 pos))
         {
-            rectTransform.anchoredPosition = localPosition;
+            rect.anchoredPosition = pos;
         }
-    }
-
-    public void OnEndDrag(PointerEventData eventData)
-    {
     }
 }

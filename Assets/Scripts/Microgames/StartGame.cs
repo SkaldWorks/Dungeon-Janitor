@@ -2,6 +2,13 @@ using UnityEngine;
 
 public class StartGame : MonoBehaviour, IInteractable
 {
+    [Header("Task")]
+    public TaskType taskType;
+    public bool hasPrerequisite;
+    public TaskType requiredTaskType;
+
+    public bool repaired;
+
     [Header("Visuals")]
     public GameObject brokenVisual;
     public GameObject repairedVisual;
@@ -9,26 +16,18 @@ public class StartGame : MonoBehaviour, IInteractable
     [Header("Minigame")]
     public MonoBehaviour minigame;
 
-    public bool interacted = false;
-    public bool repaired = false;
-
     public Interact interactScript;
-
     public BrokenCount BrokenCount;
+
+    [HideInInspector]
+    public RoomTasks roomTasks;
 
     private IMinigame minigameInterface;
 
     private void Awake()
     {
         minigameInterface = minigame as IMinigame;
-
-        if (minigameInterface == null)
-        {
-            Debug.LogError(
-                "Assigned minigame does not implement IMinigame.",
-                this
-            );
-        }
+        roomTasks = GetComponentInParent<RoomTasks>();
     }
 
     public void Interact()
@@ -36,24 +35,25 @@ public class StartGame : MonoBehaviour, IInteractable
         if (repaired)
             return;
 
-        interacted = true;
-
-        if (minigameInterface == null)
+        if (hasPrerequisite &&
+            roomTasks != null &&
+            !roomTasks.AreAllComplete(requiredTaskType))
+        {
             return;
+        }
 
-        minigameInterface.StartMinigame(this);
-    }
-
-    public void OnNotTouchingPlayer()
-    {
+        if (minigameInterface != null)
+            minigameInterface.StartMinigame(this);
     }
 
     public void OnTouchingPlayer()
     {
         if (!repaired)
-        {
             interactScript.interactionUI.SetActive(true);
-        }
+    }
+
+    public void OnNotTouchingPlayer()
+    {
     }
 
     public void CompleteRepair()
@@ -69,23 +69,25 @@ public class StartGame : MonoBehaviour, IInteractable
         if (repairedVisual != null)
             repairedVisual.SetActive(true);
 
-        Debug.Log("Repaired!");
+        if (BrokenCount != null)
+            BrokenCount.recount();
 
-        BrokenCount.recount();
+        if (roomTasks != null)
+            roomTasks.Refresh();
     }
+
     public void resetgame()
     {
         repaired = false;
 
-        if (repairedVisual != null)
-            repairedVisual.SetActive(false);
-
         if (brokenVisual != null)
             brokenVisual.SetActive(true);
 
-        interacted = false;
+        if (repairedVisual != null)
+            repairedVisual.SetActive(false);
 
-        BrokenCount.recount();
+        if (roomTasks != null)
+            roomTasks.Refresh();
     }
 }
 

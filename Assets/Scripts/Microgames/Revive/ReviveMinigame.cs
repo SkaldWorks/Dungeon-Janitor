@@ -3,272 +3,148 @@ using UnityEngine;
 
 public class ReviveMinigame : MonoBehaviour, IMinigame
 {
-    [Header("Canvas")]
     public GameObject minigamePanel;
 
-    [Header("Player")]
     public PlayerController player;
     public Bezier_Viz playerBezier;
 
-    [Header("Target")]
     public UIBezierLine targetLine;
+    public List<Vector2> targetControlPoints = new List<Vector2>
+    {
+        new Vector2(-400, -100),
+        new Vector2(-150, 250),
+        new Vector2(150, -250),
+        new Vector2(400, 100)
+    };
 
-    public List<Vector2> targetControlPoints =
-        new List<Vector2>
-        {
-            new Vector2(-400f, -100f),
-            new Vector2(-150f, 250f),
-            new Vector2(150f, -250f),
-            new Vector2(400f, 100f)
-        };
-
-    [Header("Settings")]
     public int sampleCount = 100;
-
-    // Maximum average distance that can still count as perfect.
-    public float allowedDistance = 50f;
-
-    // Accuracy needed to complete the minigame.
+    public float allowedDistance = 50;
     public float requiredAccuracy = 0.85f;
 
-    [Header("Debug")]
-    public bool showDebugMessages = true;
+    StartGame source;
+    bool playing;
 
-    private StartGame currentSource;
-
-    private bool isPlaying = false;
-
-    private void Start()
+    void Start()
     {
-        if (minigamePanel != null)
-            minigamePanel.SetActive(false);
-
-        GenerateTargetCurve();
+        minigamePanel.SetActive(false);
+        ShowTarget();
+        ResetPlayer();
     }
 
-    private void Update()
+    void Update()
     {
-        if (!isPlaying)
-            return;
-
-        CheckCurve();
+        if (playing)
+            CheckCurve();
     }
 
-    public void StartMinigame(StartGame source)
+    public void StartMinigame(StartGame newSource)
     {
-        if (isPlaying)
+        if (playing)
             return;
 
-        if (source == null)
-        {
-            Debug.LogError(
-                "ReviveMinigame was started without a source.",
-                this
-            );
-
-            return;
-        }
-
-        if (playerBezier == null)
-        {
-            Debug.LogError(
-                "Player Bezier is not assigned.",
-                this
-            );
-
-            return;
-        }
-
-        currentSource = source;
-        isPlaying = true;
+        source = newSource;
+        playing = true;
 
         if (player != null)
             player.freeze = true;
 
-        if (minigamePanel != null)
-            minigamePanel.SetActive(true);
+        minigamePanel.SetActive(true);
 
-        GenerateTargetCurve();
+        ShowTarget();
+        ResetPlayer();
     }
 
-    private void GenerateTargetCurve()
+    void ShowTarget()
     {
-        if (targetLine == null)
-        {
-            Debug.LogError(
-                "Target line is not assigned.",
-                this
-            );
-
-            return;
-        }
-
-        if (targetControlPoints.Count < 2)
-        {
-            Debug.LogError(
-                "Target needs at least 2 control points.",
-                this
-            );
-
-            return;
-        }
-
-        List<Vector2> targetCurve =
-            BezierCurve.Sample(
-                targetControlPoints,
-                sampleCount
-            );
-
-        targetLine.SetPoints(targetCurve);
+        targetLine.SetPoints(
+            BezierCurve.Sample(targetControlPoints, sampleCount)
+        );
     }
 
-    private void CheckCurve()
+    void ResetPlayer()
     {
-        List<Vector2> playerPoints =
-            playerBezier.GetControlPoints();
+        playerBezier.ResetPoints(
+            targetControlPoints[0],
+            targetControlPoints[targetControlPoints.Count - 1]
+        );
+    }
 
-        if (playerPoints.Count < 2)
-            return;
-
-        float accuracy =
-            CalculateCurveAccuracy(
-                playerPoints,
-                targetControlPoints
-            );
-
-        if (showDebugMessages)
-        {
-            Debug.Log(
-                "Curve Accuracy: " + accuracy
-            );
-        }
+    void CheckCurve()
+    {
+        float accuracy = GetAccuracy(
+            playerBezier.GetControlPoints(),
+            targetControlPoints
+        );
 
         if (accuracy >= requiredAccuracy)
-        {
-            CompleteMinigame();
-        }
+            Finish();
     }
 
-    private float CalculateCurveAccuracy(
+    float GetAccuracy(
         List<Vector2> playerPoints,
         List<Vector2> targetPoints)
     {
         List<Vector2> playerCurve =
-            BezierCurve.Sample(
-                playerPoints,
-                sampleCount
-            );
+            BezierCurve.Sample(playerPoints, sampleCount);
 
         List<Vector2> targetCurve =
-            BezierCurve.Sample(
-                targetPoints,
-                sampleCount
-            );
+            BezierCurve.Sample(targetPoints, sampleCount);
 
-        if (playerCurve.Count == 0 ||
-            targetCurve.Count == 0)
-        {
-            return 0f;
-        }
+        float distance =
+            (NearestAverage(playerCurve, targetCurve) +
+             NearestAverage(targetCurve, playerCurve)) / 2f;
 
-        // Measure how close the player's curve is to the target.
-        float playerToTarget =
-            AverageNearestDistance(
-                playerCurve,
-                targetCurve
-            );
-
-        // Do the same thing in the opposite direction.
-        // to prevent a small part of the target from being ignored.
-        float targetToPlayer =
-            AverageNearestDistance(
-                targetCurve,
-                playerCurve
-            );
-
-        // Take both measurements into account.
-        float averageDistance =
-            (playerToTarget + targetToPlayer) * 0.5f;
-
-        // Convert distance into a 0-1 accuracy value.
-        // 1 = perfect, 0 = too far away.
-        float accuracy =
-            1f -
-            Mathf.Clamp01(
-                averageDistance / allowedDistance
-            );
-
-        return accuracy;
+        return 1f - Mathf.Clamp01(distance / allowedDistance);
     }
 
-    private float AverageNearestDistance(
+    float NearestAverage(
         List<Vector2> from,
         List<Vector2> to)
     {
-        float totalDistance = 0f;
+        float total = 0;
 
-        for (int i = 0; i < from.Count; i++)
+        foreach (Vector2 a in from)
         {
-            // Start with a very large distance.
-            float closestDistance =
-                float.MaxValue;
+            float closest = float.MaxValue;
 
-            for (int j = 0; j < to.Count; j++)
-            {
-                float distance =
-                    Vector2.Distance(
-                        from[i],
-                        to[j]
-                    );
+            foreach (Vector2 b in to)
+                closest = Mathf.Min(closest, Vector2.Distance(a, b));
 
-                // Keep whichever target point is closest.
-                if (distance < closestDistance)
-                    closestDistance = distance;
-            }
-
-            totalDistance += closestDistance;
+            total += closest;
         }
 
-        // Return the average distance between the two curves.
-        return totalDistance / from.Count;
+        return total / from.Count;
     }
 
-    private void CompleteMinigame()
+    void Finish()
     {
-        if (!isPlaying)
-            return;
+        playing = false;
+        ResetPlayer();
 
-        isPlaying = false;
+        if (source != null)
+            source.CompleteRepair();
 
-        if (currentSource != null)
-        {
-            currentSource.CompleteRepair();
-        }
-
-        if (minigamePanel != null)
-            minigamePanel.SetActive(false);
+        minigamePanel.SetActive(false);
 
         if (player != null)
             player.freeze = false;
 
-        currentSource = null;
-
-        Debug.Log("Revive minigame complete!");
+        source = null;
     }
 
     public void CancelMinigame()
     {
-        if (!isPlaying)
+        if (!playing)
             return;
 
-        isPlaying = false;
+        playing = false;
+        ResetPlayer();
 
-        if (minigamePanel != null)
-            minigamePanel.SetActive(false);
+        minigamePanel.SetActive(false);
 
         if (player != null)
             player.freeze = false;
 
-        currentSource = null;
+        source = null;
     }
 }
