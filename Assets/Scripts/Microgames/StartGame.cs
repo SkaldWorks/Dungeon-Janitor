@@ -73,6 +73,20 @@ public class StartGame : MonoBehaviour, IInteractable
 
         BrokenCount.recount();
     }
+    public void resetgame()
+    {
+        repaired = false;
+
+        if (repairedVisual != null)
+            repairedVisual.SetActive(false);
+
+        if (brokenVisual != null)
+            brokenVisual.SetActive(true);
+
+        interacted = false;
+
+        BrokenCount.recount();
+    }
 }
 
 public interface IMinigame
