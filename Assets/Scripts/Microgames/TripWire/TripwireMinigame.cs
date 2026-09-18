@@ -2,21 +2,23 @@ using UnityEngine;
 
 public class TripwireMinigame : MonoBehaviour, IMinigame
 {
-    [Header("Canvas")]
+    [Header("UI")]
     public GameObject minigamePanel;
 
     [Header("Player")]
     public PlayerController player;
 
-    [Header("Wire")]
+    [Header("Tripwire")]
     public RectTransform leftAnchor;
     public RectTransform rightAnchor;
     public RectTransform draggedEnd;
     public TripwireWireGraphic wireGraphic;
 
-    [Header("Settings")]
-    public float successDistance = 40f;
+    [Header("Colliders")]
+    public BoxCollider2D draggedCollider;
+    public BoxCollider2D targetCollider;
 
+    [Header("Reset")]
     public Vector2 resetOffset;
 
     private StartGame currentSource;
@@ -27,17 +29,28 @@ public class TripwireMinigame : MonoBehaviour, IMinigame
     {
         if (minigamePanel != null)
             minigamePanel.SetActive(false);
+
+        if (draggedCollider == null && draggedEnd != null)
+            draggedCollider = draggedEnd.GetComponent<BoxCollider2D>();
+
+        if (targetCollider == null && rightAnchor != null)
+            targetCollider = rightAnchor.GetComponent<BoxCollider2D>();
+
+        SetupColliders();
     }
 
-    private void Update()
+    private void SetupColliders()
     {
-        if (!isPlaying)
-            return;
-
-        if (Input.GetMouseButtonUp(0))
+        if (draggedCollider != null && draggedEnd != null)
         {
-            dragging = false;
-            CheckForSuccess();
+            draggedCollider.size = draggedEnd.rect.size;
+            draggedCollider.offset = draggedEnd.rect.center;
+        }
+
+        if (targetCollider != null && rightAnchor != null)
+        {
+            targetCollider.size = rightAnchor.rect.size;
+            targetCollider.offset = rightAnchor.rect.center;
         }
     }
 
@@ -56,28 +69,79 @@ public class TripwireMinigame : MonoBehaviour, IMinigame
         if (minigamePanel != null)
             minigamePanel.SetActive(true);
 
+        SetupColliders();
         ResetWire();
+
+        if (wireGraphic != null)
+            wireGraphic.Hide();
     }
 
     public void BeginDragging()
     {
-        if (isPlaying)
-            dragging = true;
+        if (!isPlaying)
+            return;
+
+        dragging = true;
+
+        if (wireGraphic != null)
+            wireGraphic.Show();
+
+        UpdateWire();
     }
 
-    public void DragWire()
+    public void DragWire(Vector2 mousePosition)
     {
         if (!isPlaying || !dragging || draggedEnd == null)
             return;
 
-        draggedEnd.position = Input.mousePosition;
+        RectTransform parent = draggedEnd.parent as RectTransform;
 
-        if (wireGraphic != null)
+        if (parent == null)
+            return;
+
+        Canvas canvas = draggedEnd.GetComponentInParent<Canvas>();
+
+        Camera cam = null;
+
+        if (canvas != null &&
+            canvas.renderMode != RenderMode.ScreenSpaceOverlay)
         {
-            wireGraphic.SetPoints(
-                leftAnchor.position,
-                draggedEnd.position
-            );
+            cam = canvas.worldCamera;
+        }
+
+        if (RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            parent,
+            mousePosition,
+            cam,
+            out Vector2 localPosition))
+        {
+            draggedEnd.anchoredPosition = localPosition;
+        }
+
+        UpdateWire();
+    }
+
+    public void EndDragging()
+    {
+        if (!isPlaying || !dragging)
+            return;
+
+        dragging = false;
+
+        Physics2D.SyncTransforms();
+
+        if (draggedCollider != null &&
+            targetCollider != null &&
+            draggedCollider.Distance(targetCollider).isOverlapped)
+        {
+            CompleteMinigame();
+        }
+        else
+        {
+            ResetWire();
+
+            if (wireGraphic != null)
+                wireGraphic.Hide();
         }
     }
 
@@ -89,29 +153,21 @@ public class TripwireMinigame : MonoBehaviour, IMinigame
         draggedEnd.position =
             leftAnchor.position + (Vector3)resetOffset;
 
-        if (wireGraphic != null)
-        {
-            wireGraphic.SetPoints(
-                leftAnchor.position,
-                draggedEnd.position
-            );
-        }
+        UpdateWire();
     }
 
-    private void CheckForSuccess()
+    private void UpdateWire()
     {
-        if (draggedEnd == null || rightAnchor == null)
+        if (wireGraphic == null)
             return;
 
-        float distance = Vector2.Distance(
-            draggedEnd.position,
-            rightAnchor.position
-        );
+        if (leftAnchor == null || draggedEnd == null)
+            return;
 
-        if (distance <= successDistance)
-            CompleteMinigame();
-        else
-            ResetWire();
+        wireGraphic.SetPoints(
+            leftAnchor.position,
+            draggedEnd.position
+        );
     }
 
     private void CompleteMinigame()
@@ -121,6 +177,9 @@ public class TripwireMinigame : MonoBehaviour, IMinigame
 
         if (currentSource != null)
             currentSource.CompleteRepair();
+
+        if (wireGraphic != null)
+            wireGraphic.Hide();
 
         if (minigamePanel != null)
             minigamePanel.SetActive(false);
@@ -140,6 +199,9 @@ public class TripwireMinigame : MonoBehaviour, IMinigame
         dragging = false;
 
         ResetWire();
+
+        if (wireGraphic != null)
+            wireGraphic.Hide();
 
         if (minigamePanel != null)
             minigamePanel.SetActive(false);

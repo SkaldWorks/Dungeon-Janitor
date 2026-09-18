@@ -5,15 +5,15 @@ using UnityEngine.UI;
 public class TripwireDragHandle : MonoBehaviour,
     IPointerDownHandler,
     IDragHandler,
-    IEndDragHandler
+    IPointerUpHandler
 {
     public TripwireMinigame minigame;
 
-    private Image handleImage;
+    private Image image;
 
     private void Awake()
     {
-        handleImage = GetComponent<Image>();
+        image = GetComponent<Image>();
     }
 
     public void OnPointerDown(PointerEventData eventData)
@@ -21,19 +21,22 @@ public class TripwireDragHandle : MonoBehaviour,
         if (minigame != null)
             minigame.BeginDragging();
 
-        if (handleImage != null)
-            handleImage.enabled = false;
+        if (image != null)
+            image.enabled = false;
     }
 
     public void OnDrag(PointerEventData eventData)
     {
         if (minigame != null)
-            minigame.DragWire();
+            minigame.DragWire(eventData.position);
     }
 
-    public void OnEndDrag(PointerEventData eventData)
+    public void OnPointerUp(PointerEventData eventData)
     {
-        if (handleImage != null)
-            handleImage.enabled = true;
+        if (image != null)
+            image.enabled = true;
+
+        if (minigame != null)
+            minigame.EndDragging();
     }
 }

@@ -1,9 +1,20 @@
 using UnityEngine;
-using UnityEngine.UI;
 
 public class TripwireWireGraphic : MonoBehaviour
 {
     public RectTransform wireRect;
+
+    public void Show()
+    {
+        if (wireRect != null)
+            wireRect.gameObject.SetActive(true);
+    }
+
+    public void Hide()
+    {
+        if (wireRect != null)
+            wireRect.gameObject.SetActive(false);
+    }
 
     public void SetPoints(Vector3 start, Vector3 end)
     {
@@ -12,12 +23,10 @@ public class TripwireWireGraphic : MonoBehaviour
 
         Vector3 direction = end - start;
 
-        float distance = direction.magnitude;
-
         wireRect.position = (start + end) / 2f;
 
         wireRect.sizeDelta = new Vector2(
-            distance,
+            direction.magnitude,
             wireRect.sizeDelta.y
         );
 
@@ -26,10 +35,6 @@ public class TripwireWireGraphic : MonoBehaviour
             direction.x
         ) * Mathf.Rad2Deg;
 
-        wireRect.rotation = Quaternion.Euler(
-            0f,
-            0f,
-            angle
-        );
+        wireRect.rotation = Quaternion.Euler(0f, 0f, angle);
     }
 }
