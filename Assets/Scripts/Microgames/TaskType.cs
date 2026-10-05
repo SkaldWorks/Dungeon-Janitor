@@ -4,4 +4,5 @@ public enum TaskType
     SetTrap,
     Revive,
     PickUpBones,
+    CleanGoop,
 }
