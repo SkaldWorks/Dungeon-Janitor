@@ -1,12 +1,10 @@
+
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 public class PlayerController : MonoBehaviour
 {
-    public float speed;
-    public float groundDist;
-
-    public LayerMask ground;
+    public float speed = 5f;
     public Rigidbody rb;
     public SpriteRenderer sr;
 
@@ -14,79 +12,50 @@ public class PlayerController : MonoBehaviour
 
     private Vector2 moveInput;
 
-    void Start()
+    private void Awake()
     {
-        rb = GetComponent<Rigidbody>();
+        if (rb == null)
+            rb = GetComponent<Rigidbody>();
+
+        if (rb == null)
+        {
+            Debug.LogError("PlayerController needs a Rigidbody.", this);
+            enabled = false;
+            return;
+        }
+
         rb.interpolation = RigidbodyInterpolation.Interpolate;
     }
 
-    void Update()
+    private void Update()
     {
-        if (freeze)
+        if (freeze || Keyboard.current == null)
         {
             moveInput = Vector2.zero;
             return;
         }
 
-        float x = 0;
-        float y = 0;
+        float x = 0f;
+        float y = 0f;
 
-        if (Keyboard.current != null)
-        {
-            if (Keyboard.current.aKey.isPressed)
-                x = -1;
+        if (Keyboard.current.aKey.isPressed) x -= 1f;
+        if (Keyboard.current.dKey.isPressed) x += 1f;
+        if (Keyboard.current.sKey.isPressed) y -= 1f;
+        if (Keyboard.current.wKey.isPressed) y += 1f;
 
-            if (Keyboard.current.dKey.isPressed)
-                x = 1;
+        moveInput = Vector2.ClampMagnitude(new Vector2(x, y), 1f);
 
-            if (Keyboard.current.sKey.isPressed)
-                y = -1;
-
-            if (Keyboard.current.wKey.isPressed)
-                y = 1;
-        }
-
-        moveInput = new Vector2(x, y);
-
-        // Sprite flipping doesn't need to happen in FixedUpdate
-        if (x < 0)
-            sr.flipX = true;
-        else if (x > 0)
-            sr.flipX = false;
+        if (sr != null && x != 0f)
+            sr.flipX = x < 0f;
     }
 
-    void FixedUpdate()
+    private void FixedUpdate()
     {
-        if (freeze)
-        {
-            rb.linearVelocity = Vector3.zero;
-            return;
-        }
+        Vector3 velocity = rb.linearVelocity;
 
-        Vector3 moveDir = new Vector3(
-            moveInput.x,
-            0,
-            moveInput.y
-        );
+        velocity.x = moveInput.x * speed;
+        velocity.z = moveInput.y * speed;
 
-        rb.linearVelocity = moveDir * speed;
-
-        RaycastHit hit;
-
-        Vector3 castPos = rb.position;
-        castPos.y += 1;
-
-        if (Physics.Raycast(
-            castPos,
-            Vector3.down,
-            out hit,
-            Mathf.Infinity,
-            ground))
-        {
-            Vector3 movePos = rb.position;
-            movePos.y = hit.point.y + groundDist;
-
-            rb.MovePosition(movePos);
-        }
+        rb.linearVelocity = velocity;
     }
 }

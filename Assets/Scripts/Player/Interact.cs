@@ -1,58 +1,84 @@
+
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
-
 
 public interface IInteractable
 {
     void Interact();
     void OnTouchingPlayer();
     void OnNotTouchingPlayer();
-
 }
+
 public class Interact : MonoBehaviour
 {
-    private IInteractable currentInteractable;
+    public DialogueManager dialogueManager;
+
     public GameObject interactionUI;
     public TextMeshProUGUI interactionText;
+    public string interactionPrompt = "Press E to interact";
 
-    void Start()
+    private IInteractable currentInteractable;
+
+    private void Awake()
     {
         interactionUI.SetActive(false);
     }
-    void Update()
+
+    private void Update()
     {
-        if (Keyboard.current.eKey.wasPressedThisFrame && currentInteractable != null)
+        if (Keyboard.current == null ||
+            !Keyboard.current.eKey.wasPressedThisFrame ||
+            currentInteractable == null)
         {
-            currentInteractable.Interact();
+            return;
+        }
+
+        currentInteractable.Interact();
+
+        if (currentInteractable is NPCDialogue npc)
+        {
+            interactionUI.SetActive(!npc.IsDialogueActive);
+        }
+        else
+        {
             currentInteractable = null;
             interactionUI.SetActive(false);
         }
     }
 
-    private void OnTriggerEnter(Collider collision)
+    private void OnTriggerEnter(Collider other)
     {
-        IInteractable interactable = collision.GetComponent<IInteractable>();
+        IInteractable interactable =
+            other.GetComponent<IInteractable>();
 
-        if (interactable != null)
-        {
-            currentInteractable = interactable;
-            currentInteractable.OnTouchingPlayer();
+        if (interactable == null)
+            return;
 
+        currentInteractable = interactable;
 
-        }
+        if (interactable is NPCDialogue npc)
+            npc.dialogueManager = dialogueManager;
+
+        interactionText.text = interactionPrompt;
+        interactionUI.SetActive(true);
+
+        interactable.OnTouchingPlayer();
     }
-    private void OnTriggerExit(Collider collision)
+
+    private void OnTriggerExit(Collider other)
     {
-        IInteractable interactable = collision.GetComponent<IInteractable>();
+        IInteractable interactable =
+            other.GetComponent<IInteractable>();
 
-        if (interactable != null && interactable == currentInteractable)
+        if (interactable == null ||
+            interactable != currentInteractable)
         {
-            interactionUI.SetActive(false);
-
-            currentInteractable.OnNotTouchingPlayer();
-            currentInteractable = null;
-
+            return;
         }
+
+        interactable.OnNotTouchingPlayer();
+        currentInteractable = null;
+        interactionUI.SetActive(false);
     }
 }
