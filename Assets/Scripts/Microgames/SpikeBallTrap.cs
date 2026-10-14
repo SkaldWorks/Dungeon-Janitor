@@ -1,35 +1,35 @@
+
 using UnityEngine;
 
 public class SpikeBallTrap : MonoBehaviour, IMinigame
 {
+    [Header("References")]
     public RectTransform swingArm;
     public RectTransform spikeBall;
 
-    [Header("Swing")]
-    public float swingForce = 2f;
-    public float gravity = 180f;
-    public float damping = 0.995f;
-    public float maxSpeed = 300f;
+[Header("Swing")]
+public float swingForce = 0.4f;
+public float gravity = 180f;
+[Range(0f, 1f)] public float damping = 0.997f;
+public float maxSpeed = 180f;
 
-    [Header("Lock")]
-    [Range(90f, 175f)]
-    public float targetAngle = 170f;
-
-    public float overshoot = 5f;
-    public float riseTime = 0.2f;
-    public float fallTime = 0.4f;
-    public float lockTime = 1f;
+[Header("Lock")]
+[Range(45f, 120f)] public float targetAngle = 90f;
+public float overshoot = 3f;
+public float riseTime = 0.2f;
+public float fallTime = 0.4f;
+public float lockTime = 1f;
 
     private enum State
     {
+        Idle,
         Swinging,
         Rising,
         Falling,
         Locked
     }
 
-    private State state;
-
+    private State state = State.Idle;
     private StartGame source;
 
     private float angle;
@@ -47,22 +47,27 @@ public class SpikeBallTrap : MonoBehaviour, IMinigame
 
     public void StartMinigame(StartGame source)
     {
+        Release();
+
         if (swingArm == null || spikeBall == null)
         {
-            Debug.LogError("SpikeBallTrap: Assign Swing Arm and Spike Ball.");
+            state = State.Idle;
+
+            Debug.LogError(
+                "SpikeBallTrap: Assign Swing Arm and Spike Ball.",
+                this
+            );
+
             return;
         }
 
-        Release();
-
         this.source = source;
 
-        // The top of the arm is the pivot.
         swingArm.pivot = new Vector2(0.5f, 1f);
 
-        // Attach the ball to the end of the arm.
         spikeBall.SetParent(swingArm, false);
-        spikeBall.anchorMin = spikeBall.anchorMax = new Vector2(0.5f, 1f);
+        spikeBall.anchorMin = new Vector2(0.5f, 1f);
+        spikeBall.anchorMax = new Vector2(0.5f, 1f);
         spikeBall.anchoredPosition = new Vector2(
             0f,
             -swingArm.rect.height
@@ -88,6 +93,9 @@ public class SpikeBallTrap : MonoBehaviour, IMinigame
     {
         switch (state)
         {
+            case State.Idle:
+                break;
+
             case State.Swinging:
                 HandleInput();
                 Swing();
@@ -111,6 +119,7 @@ public class SpikeBallTrap : MonoBehaviour, IMinigame
         }
     }
 
+
     private void HandleInput()
     {
         if (Input.GetMouseButtonDown(0) && IsOverBall())
@@ -118,11 +127,21 @@ public class SpikeBallTrap : MonoBehaviour, IMinigame
 
         if (Input.GetMouseButton(0) && grabbed)
         {
-            speed = Mathf.Clamp(
-                speed + Input.GetAxisRaw("Mouse X") * swingForce,
-                -maxSpeed,
-                maxSpeed
+            float mouseX = Mathf.Clamp(
+                Input.GetAxisRaw("Mouse X"),
+                -1f,
+                1f
             );
+
+            // Give the player more leverage as the arm approaches horizontal, where the heavy ball is harder to swing.
+            float horizontalBoost = Mathf.Lerp(
+                1f,
+                2f,
+                Mathf.Abs(Mathf.Sin(angle * Mathf.Deg2Rad))
+            );
+
+            speed += mouseX * swingForce * horizontalBoost
+                    * Time.deltaTime * 60f;
         }
 
         if (Input.GetMouseButtonUp(0))
@@ -131,23 +150,15 @@ public class SpikeBallTrap : MonoBehaviour, IMinigame
 
     private void Swing()
     {
-        speed -=
-            Mathf.Sin(angle * Mathf.Deg2Rad) *
-            gravity *
-            Time.deltaTime;
+        float deltaTime = Time.deltaTime;
 
-        speed *= Mathf.Pow(
-            damping,
-            Time.deltaTime * 60f
-        );
+        speed -= Mathf.Sin(angle * Mathf.Deg2Rad) * gravity * deltaTime;
 
-        speed = Mathf.Clamp(
-            speed,
-            -maxSpeed,
-            maxSpeed
-        );
+        speed *= Mathf.Pow(damping, deltaTime * 60f);
 
-        angle += speed * Time.deltaTime;
+        speed = Mathf.Clamp(speed, -maxSpeed, maxSpeed);
+
+        angle += speed * deltaTime;
 
         SetAngle(angle);
     }
@@ -156,14 +167,19 @@ public class SpikeBallTrap : MonoBehaviour, IMinigame
     {
         float direction = Mathf.Sign(angle);
 
-        if (direction == 0f)
+        if (Mathf.Approximately(direction, 0f))
             direction = 1f;
 
         lockAngle = direction * targetAngle;
 
-        overshootAngle = direction * Mathf.Min(
+        float desiredOvershoot = Mathf.Min(
             targetAngle + overshoot,
             179f
+        );
+
+        overshootAngle = direction * Mathf.Max(
+            Mathf.Abs(angle),
+            desiredOvershoot
         );
 
         startAngle = angle;
@@ -185,16 +201,13 @@ public class SpikeBallTrap : MonoBehaviour, IMinigame
 
         t = Mathf.SmoothStep(0f, 1f, t);
 
-        angle = Mathf.Lerp(
-            startAngle,
-            overshootAngle,
-            t
-        );
+        angle = Mathf.Lerp(startAngle, overshootAngle, t);
 
         SetAngle(angle);
 
         if (t >= 1f)
         {
+            angle = overshootAngle;
             timer = 0f;
             startAngle = angle;
             state = State.Falling;
@@ -211,11 +224,7 @@ public class SpikeBallTrap : MonoBehaviour, IMinigame
 
         t = Mathf.SmoothStep(0f, 1f, t);
 
-        angle = Mathf.Lerp(
-            startAngle,
-            lockAngle,
-            t
-        );
+        angle = Mathf.Lerp(startAngle, lockAngle, t);
 
         SetAngle(angle);
 
@@ -225,9 +234,7 @@ public class SpikeBallTrap : MonoBehaviour, IMinigame
             timer = lockTime;
             state = State.Locked;
 
-            // PLAY CLICK SOUND HERE.
-            // Example:
-            // clickSound.Play();
+            // Play the lock click sound here
         }
     }
 
@@ -253,13 +260,14 @@ public class SpikeBallTrap : MonoBehaviour, IMinigame
     private bool IsOverBall()
     {
         Canvas canvas = spikeBall.GetComponentInParent<Canvas>();
-
         Camera cam = null;
 
         if (canvas != null &&
             canvas.renderMode != RenderMode.ScreenSpaceOverlay)
         {
-            cam = canvas.worldCamera;
+            cam = canvas.worldCamera != null
+                ? canvas.worldCamera
+                : Camera.main;
         }
 
         return RectTransformUtility.RectangleContainsScreenPoint(
@@ -271,6 +279,9 @@ public class SpikeBallTrap : MonoBehaviour, IMinigame
 
     private void Grab()
     {
+        if (grabbed)
+            return;
+
         grabbed = true;
 
         oldLockMode = Cursor.lockState;
@@ -304,5 +315,6 @@ public class SpikeBallTrap : MonoBehaviour, IMinigame
     private void OnDisable()
     {
         Release();
+        state = State.Idle;
     }
 }
