@@ -35,9 +35,7 @@ public class StartGame : MonoBehaviour, IInteractable
         if (repaired)
             return;
 
-        if (hasPrerequisite &&
-            roomTasks != null &&
-            !roomTasks.AreAllComplete(requiredTaskType))
+        if (hasPrerequisite && roomTasks != null && !roomTasks.AreAllComplete(requiredTaskType))
         {
             return;
         }
