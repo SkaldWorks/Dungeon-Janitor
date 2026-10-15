@@ -1,41 +1,44 @@
+
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
+[RequireComponent(typeof(Image))]
 public class TripwireDragHandle : MonoBehaviour,
     IPointerDownHandler,
     IDragHandler,
     IPointerUpHandler
 {
-    public TripwireMinigame minigame;
-
-    private Image image;
+    [SerializeField] private TripwireMinigame minigame;
 
     private void Awake()
     {
-        image = GetComponent<Image>();
+        // The loose end must remain clickable.
+        GetComponent<Image>().raycastTarget = true;
     }
 
     public void OnPointerDown(PointerEventData eventData)
     {
         if (minigame != null)
-            minigame.BeginDragging();
-
-        if (image != null)
-            image.enabled = false;
+        {
+            minigame.BeginDragging(
+                eventData.position,
+                eventData.pressEventCamera);
+        }
     }
 
     public void OnDrag(PointerEventData eventData)
     {
         if (minigame != null)
-            minigame.DragWire(eventData.position);
+        {
+            minigame.DragWire(
+                eventData.position,
+                eventData.pressEventCamera);
+        }
     }
 
     public void OnPointerUp(PointerEventData eventData)
     {
-        if (image != null)
-            image.enabled = true;
-
         if (minigame != null)
             minigame.EndDragging();
     }

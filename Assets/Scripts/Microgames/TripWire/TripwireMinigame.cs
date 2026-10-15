@@ -1,97 +1,160 @@
+
 using UnityEngine;
+using UnityEngine.UI;
 
 public class TripwireMinigame : MonoBehaviour, IMinigame
 {
     [Header("UI")]
-    public GameObject minigamePanel;
+    [SerializeField] private GameObject minigamePanel;
 
     [Header("Player")]
-    public PlayerController player;
+    [SerializeField] private PlayerController player;
 
     [Header("Tripwire")]
-    public RectTransform leftAnchor;
-    public RectTransform rightAnchor;
-    public RectTransform draggedEnd;
-    public TripwireWireGraphic wireGraphic;
+    [SerializeField] private RectTransform leftAnchor;
+    [SerializeField] private RectTransform[] guideLoops;
+    [SerializeField] private RectTransform rightAnchor;
+    [SerializeField] private RectTransform draggedEnd;
+    [SerializeField] private TripwireGraphic wireGraphic;
 
-    [Header("Colliders")]
-    public BoxCollider2D draggedCollider;
-    public BoxCollider2D targetCollider;
+    [Header("Starting Position")]
+    [SerializeField] private Vector2 resetOffset = new Vector2(100f, -40f);
 
-    [Header("Reset")]
-    public Vector2 resetOffset;
+    [Header("Guide Colors")]
+    [SerializeField] private Color inactiveColor =
+        new Color(0.55f, 0.55f, 0.55f, 1f);
+
+    [SerializeField] private Color activeColor =
+        new Color(1f, 0.7f, 0.15f, 1f);
+
+    [SerializeField] private Color completedColor =
+        new Color(0.3f, 1f, 0.4f, 1f);
 
     private StartGame currentSource;
-    private bool isPlaying;
-    private bool dragging;
+    private Image[] guideImages;
 
-    private void Start()
+    private int nextGuideIndex;
+    private bool isPlaying;
+    private bool isDragging;
+    private bool wasPlayerFrozen;
+
+    private Vector3 dragOffset;
+
+    private void Awake()
     {
+        CacheGuideImages();
+
         if (minigamePanel != null)
             minigamePanel.SetActive(false);
-
-        if (draggedCollider == null && draggedEnd != null)
-            draggedCollider = draggedEnd.GetComponent<BoxCollider2D>();
-
-        if (targetCollider == null && rightAnchor != null)
-            targetCollider = rightAnchor.GetComponent<BoxCollider2D>();
-
-        SetupColliders();
     }
 
-    private void SetupColliders()
+    private void CacheGuideImages()
     {
-        if (draggedCollider != null && draggedEnd != null)
+        if (guideLoops == null)
         {
-            draggedCollider.size = draggedEnd.rect.size;
-            draggedCollider.offset = draggedEnd.rect.center;
+            guideImages = new Image[0];
+            return;
         }
 
-        if (targetCollider != null && rightAnchor != null)
+        guideImages = new Image[guideLoops.Length];
+
+        for (int i = 0; i < guideLoops.Length; i++)
         {
-            targetCollider.size = rightAnchor.rect.size;
-            targetCollider.offset = rightAnchor.rect.center;
+            if (guideLoops[i] == null)
+                continue;
+
+            guideImages[i] = guideLoops[i].GetComponent<Image>();
+
+            if (guideImages[i] != null)
+                guideImages[i].raycastTarget = false;
         }
     }
 
     public void StartMinigame(StartGame source)
     {
-        if (isPlaying)
+        if (isPlaying || !ValidateSetup(source))
             return;
 
         currentSource = source;
+        nextGuideIndex = 0;
+        isDragging = false;
         isPlaying = true;
-        dragging = false;
 
         if (player != null)
+        {
+            wasPlayerFrozen = player.freeze;
             player.freeze = true;
+        }
 
-        if (minigamePanel != null)
-            minigamePanel.SetActive(true);
+        minigamePanel.SetActive(true);
 
-        SetupColliders();
-        ResetWire();
+        ResetWirePosition();
+        UpdateGuideVisuals();
 
-        if (wireGraphic != null)
-            wireGraphic.Hide();
-    }
-
-    public void BeginDragging()
-    {
-        if (!isPlaying)
-            return;
-
-        dragging = true;
-
-        if (wireGraphic != null)
-            wireGraphic.Show();
-
+        wireGraphic.Show();
         UpdateWire();
     }
 
-    public void DragWire(Vector2 mousePosition)
+    private bool ValidateSetup(StartGame source)
     {
-        if (!isPlaying || !dragging || draggedEnd == null)
+        if (source == null ||
+            minigamePanel == null ||
+            leftAnchor == null ||
+            rightAnchor == null ||
+            draggedEnd == null ||
+            wireGraphic == null)
+        {
+            Debug.LogError(
+                "TripwireMinigame is missing a required reference.",
+                this);
+
+            return false;
+        }
+
+        if (guideLoops == null || guideLoops.Length < 2)
+        {
+            Debug.LogError(
+                "TripwireMinigame requires at least two guide loops.",
+                this);
+
+            return false;
+        }
+
+        if (guideImages == null ||
+            guideImages.Length != guideLoops.Length)
+        {
+            CacheGuideImages();
+        }
+
+        for (int i = 0; i < guideLoops.Length; i++)
+        {
+            if (guideLoops[i] == null || guideImages[i] == null)
+            {
+                Debug.LogError(
+                    "Each guide loop needs a RectTransform and an Image.",
+                    this);
+
+                return false;
+            }
+        }
+
+        if (!wireGraphic.CanDrawPath(guideLoops.Length))
+        {
+            Debug.LogError(
+                "Create one more wire segment than the number of guide loops.",
+                this);
+
+            return false;
+        }
+
+        return true;
+    }
+
+    public void BeginDragging(
+        Vector2 screenPosition,
+        Camera eventCamera)
+    {
+        if (!isPlaying)
             return;
 
         RectTransform parent = draggedEnd.parent as RectTransform;
@@ -99,95 +162,136 @@ public class TripwireMinigame : MonoBehaviour, IMinigame
         if (parent == null)
             return;
 
-        Canvas canvas = draggedEnd.GetComponentInParent<Canvas>();
-
-        Camera cam = null;
-
-        if (canvas != null &&
-            canvas.renderMode != RenderMode.ScreenSpaceOverlay)
+        if (!RectTransformUtility.ScreenPointToWorldPointInRectangle(
+                parent,
+                screenPosition,
+                eventCamera,
+                out Vector3 pointerPosition))
         {
-            cam = canvas.worldCamera;
+            return;
         }
 
-        if (RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            parent,
-            mousePosition,
-            cam,
-            out Vector2 localPosition))
+        dragOffset = draggedEnd.position - pointerPosition;
+        isDragging = true;
+    }
+
+    public void DragWire(
+        Vector2 screenPosition,
+        Camera eventCamera)
+    {
+        if (!isPlaying || !isDragging)
+            return;
+
+        RectTransform parent = draggedEnd.parent as RectTransform;
+
+        if (parent == null)
+            return;
+
+        if (!RectTransformUtility.ScreenPointToWorldPointInRectangle(
+                parent,
+                screenPosition,
+                eventCamera,
+                out Vector3 pointerPosition))
         {
-            draggedEnd.anchoredPosition = localPosition;
+            return;
         }
 
-        UpdateWire();
+        draggedEnd.position = pointerPosition + dragOffset;
+
+        Vector2 endScreenPosition =
+            RectTransformUtility.WorldToScreenPoint(
+                eventCamera,
+                draggedEnd.position);
+
+        CheckProgress(endScreenPosition, eventCamera);
+
+        if (isPlaying)
+            UpdateWire();
+    }
+
+    private void CheckProgress(
+        Vector2 screenPosition,
+        Camera eventCamera)
+    {
+        if (nextGuideIndex < guideLoops.Length &&
+            RectTransformUtility.RectangleContainsScreenPoint(
+                guideLoops[nextGuideIndex],
+                screenPosition,
+                eventCamera))
+        {
+            nextGuideIndex++;
+            UpdateGuideVisuals();
+        }
+
+        if (nextGuideIndex == guideLoops.Length &&
+            RectTransformUtility.RectangleContainsScreenPoint(
+                rightAnchor,
+                screenPosition,
+                eventCamera))
+        {
+            CompleteMinigame();
+        }
     }
 
     public void EndDragging()
     {
-        if (!isPlaying || !dragging)
+        if (!isPlaying)
             return;
 
-        dragging = false;
+        isDragging = false;
+    }
 
-        Physics2D.SyncTransforms();
-
-        if (draggedCollider != null &&
-            targetCollider != null &&
-            draggedCollider.Distance(targetCollider).isOverlapped)
+    private void ResetWirePosition()
+    {
+        if (leftAnchor.parent != null)
         {
-            CompleteMinigame();
+            Vector3 localPosition =
+                leftAnchor.localPosition +
+                new Vector3(resetOffset.x, resetOffset.y, 0f);
+
+            draggedEnd.position =
+                leftAnchor.parent.TransformPoint(localPosition);
         }
         else
         {
-            ResetWire();
-
-            if (wireGraphic != null)
-                wireGraphic.Hide();
+            draggedEnd.position =
+                leftAnchor.position + (Vector3)resetOffset;
         }
-    }
-
-    private void ResetWire()
-    {
-        if (draggedEnd == null || leftAnchor == null)
-            return;
-
-        draggedEnd.position =
-            leftAnchor.position + (Vector3)resetOffset;
-
-        UpdateWire();
     }
 
     private void UpdateWire()
     {
-        if (wireGraphic == null)
-            return;
-
-        if (leftAnchor == null || draggedEnd == null)
-            return;
-
-        wireGraphic.SetPoints(
+        wireGraphic.SetPath(
             leftAnchor.position,
-            draggedEnd.position
-        );
+            guideLoops,
+            nextGuideIndex,
+            draggedEnd.position);
+    }
+
+    private void UpdateGuideVisuals()
+    {
+        for (int i = 0; i < guideImages.Length; i++)
+        {
+            if (guideImages[i] == null)
+                continue;
+
+            if (i < nextGuideIndex)
+                guideImages[i].color = completedColor;
+            else if (i == nextGuideIndex)
+                guideImages[i].color = activeColor;
+            else
+                guideImages[i].color = inactiveColor;
+        }
     }
 
     private void CompleteMinigame()
     {
-        isPlaying = false;
-        dragging = false;
+        StartGame source = currentSource;
 
-        if (currentSource != null)
-            currentSource.CompleteRepair();
+        CloseMinigame();
 
-        if (wireGraphic != null)
-            wireGraphic.Hide();
-
-        if (minigamePanel != null)
-            minigamePanel.SetActive(false);
-
-        if (player != null)
-            player.freeze = false;
-
-        currentSource = null;
+        if (source != null)
+            source.CompleteRepair();
     }
 
     public void CancelMinigame()
@@ -195,10 +299,13 @@ public class TripwireMinigame : MonoBehaviour, IMinigame
         if (!isPlaying)
             return;
 
-        isPlaying = false;
-        dragging = false;
+        CloseMinigame();
+    }
 
-        ResetWire();
+    private void CloseMinigame()
+    {
+        isPlaying = false;
+        isDragging = false;
 
         if (wireGraphic != null)
             wireGraphic.Hide();
@@ -207,8 +314,14 @@ public class TripwireMinigame : MonoBehaviour, IMinigame
             minigamePanel.SetActive(false);
 
         if (player != null)
-            player.freeze = false;
+            player.freeze = wasPlayerFrozen;
 
         currentSource = null;
+    }
+
+    private void OnDisable()
+    {
+        if (isPlaying)
+            CloseMinigame();
     }
 }
