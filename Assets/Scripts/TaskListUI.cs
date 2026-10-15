@@ -1,3 +1,5 @@
+
+using System.Collections.Generic;
 using System.Text;
 using TMPro;
 using UnityEngine;
@@ -24,11 +26,11 @@ public class TaskListUI : MonoBehaviour
 
     public void Hide(RoomTasks room)
     {
-        if (currentRoom == room)
-        {
-            currentRoom = null;
-            panel.SetActive(false);
-        }
+        if (currentRoom != room)
+            return;
+
+        currentRoom = null;
+        panel.SetActive(false);
     }
 
     public void Refresh()
@@ -39,93 +41,69 @@ public class TaskListUI : MonoBehaviour
         roomNameText.text = currentRoom.roomName;
 
         StringBuilder text = new StringBuilder();
-
+        HashSet<TaskType> shown = new HashSet<TaskType>();
         StartGame[] tasks = currentRoom.GetTasks();
 
-        // First show tasks with no prerequisite.
+        // Display tasks that have no prerequisites first.
         foreach (StartGame task in tasks)
         {
-            if (task.hasPrerequisite)
+            if (task == null || task.hasPrerequisite)
                 continue;
 
-            // Don't show the same type twice.
-            if (HasTaskTypeAlreadyShown(tasks, task.taskType, text))
-                continue;
-
-            AddTask(text, task, false);
-
-            // show anything that depends on this task.
-            ShowChildren(text, task.taskType, tasks);
+            ShowTaskChain(text, task, tasks, shown, 0);
         }
 
         taskText.text = text.ToString();
     }
 
-    private void ShowChildren(
+    private void ShowTaskChain(
         StringBuilder text,
-        TaskType parentType,
-        StartGame[] tasks)
+        StartGame task,
+        StartGame[] tasks,
+        HashSet<TaskType> shown,
+        int depth)
     {
-        foreach (StartGame task in tasks)
+        if (!shown.Add(task.taskType))
+            return;
+
+        AddTask(text, task, depth);
+
+        foreach (StartGame child in tasks)
         {
-            if (!task.hasPrerequisite)
+            if (child == null ||
+                !child.hasPrerequisite ||
+                child.requiredTaskType != task.taskType)
                 continue;
 
-            if (task.requiredTaskType != parentType)
-                continue;
-
-            // Don't show the same type twice.
-            if (HasTaskTypeAlreadyShown(tasks, task.taskType, text))
-                continue;
-
-            AddTask(text, task, true);
+            ShowTaskChain(text, child, tasks, shown, depth + 1);
         }
     }
 
     private void AddTask(
         StringBuilder text,
         StartGame task,
-        bool indented)
+        int depth)
     {
-        int total =
-            currentRoom.GetTotal(task.taskType);
+        int total = currentRoom.GetTotal(task.taskType);
+        int complete = currentRoom.GetCompleted(task.taskType);
 
-        int complete =
-            currentRoom.GetCompleted(task.taskType);
-
-        bool locked =
-            task.hasPrerequisite &&
-            !currentRoom.AreAllComplete(
-                task.requiredTaskType
-            );
-
-        string name = GetName(task.taskType);
-
-        if (indented)
-            text.Append("    ");
+        bool locked = task.hasPrerequisite &&
+            !currentRoom.AreAllComplete(task.requiredTaskType);
 
         if (locked)
             text.Append("<color=#777777>");
 
-        text.Append(
-            name + "   " +
-            complete + "/" + total
-        );
+        text.Append(' ', depth * 4);
+        text.Append(GetName(task.taskType));
+        text.Append("   ");
+        text.Append(complete);
+        text.Append('/');
+        text.Append(total);
 
         if (locked)
             text.Append("</color>");
 
         text.AppendLine();
-    }
-
-    private bool HasTaskTypeAlreadyShown(
-        StartGame[] tasks,
-        TaskType type,
-        StringBuilder text)
-    {
-        string name = GetName(type);
-
-        return text.ToString().Contains(name);
     }
 
     private string GetName(TaskType type)
@@ -143,8 +121,9 @@ public class TaskListUI : MonoBehaviour
 
             case TaskType.PickUpBones:
                 return "Pick Up Bones";
-        }
 
-        return type.ToString();
+            default:
+                return type.ToString();
+        }
     }
 }
