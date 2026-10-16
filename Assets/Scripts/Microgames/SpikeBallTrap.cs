@@ -7,18 +7,19 @@ public class SpikeBallTrap : MonoBehaviour, IMinigame
     public RectTransform swingArm;
     public RectTransform spikeBall;
 
-[Header("Swing")]
-public float swingForce = 0.4f;
-public float gravity = 180f;
-[Range(0f, 1f)] public float damping = 0.997f;
-public float maxSpeed = 180f;
+    [Header("Swing")]
+    public float swingAcceleration = 120f;
+    public float gravity = 180f;
+    [SerializeField, Range(0f, 1f)] private float damping = 0.997f;
+    public float maxSpeed = 180f;
+    public float inputDeadzone = 0.5f;
 
-[Header("Lock")]
-[Range(45f, 120f)] public float targetAngle = 90f;
-public float overshoot = 3f;
-public float riseTime = 0.2f;
-public float fallTime = 0.4f;
-public float lockTime = 1f;
+    [Header("Lock")]
+    [SerializeField, Range(45f, 120f)] private float targetAngle = 90f;
+    public float overshoot = 3f;
+    public float riseTime = 0.2f;
+    public float fallTime = 0.4f;
+    public float lockTime = 1f;
 
     private enum State
     {
@@ -41,9 +42,7 @@ public float lockTime = 1f;
     private float startAngle;
 
     private bool grabbed;
-
-    private CursorLockMode oldLockMode;
-    private bool oldCursorVisible;
+    private Vector2 previousPointerPosition;
 
     public void StartMinigame(StartGame source)
     {
@@ -51,13 +50,12 @@ public float lockTime = 1f;
 
         if (swingArm == null || spikeBall == null)
         {
-            state = State.Idle;
-
             Debug.LogError(
                 "SpikeBallTrap: Assign Swing Arm and Spike Ball.",
                 this
             );
 
+            state = State.Idle;
             return;
         }
 
@@ -85,7 +83,6 @@ public float lockTime = 1f;
         state = State.Swinging;
 
         SetAngle(0f);
-
         gameObject.SetActive(true);
     }
 
@@ -93,9 +90,6 @@ public float lockTime = 1f;
     {
         switch (state)
         {
-            case State.Idle:
-                break;
-
             case State.Swinging:
                 HandleInput();
                 Swing();
@@ -119,47 +113,54 @@ public float lockTime = 1f;
         }
     }
 
-
     private void HandleInput()
     {
+        Vector2 pointerPosition = Input.mousePosition;
+
         if (Input.GetMouseButtonDown(0) && IsOverBall())
-            Grab();
-
-        if (Input.GetMouseButton(0) && grabbed)
         {
-            float mouseX = Mathf.Clamp(
-                Input.GetAxisRaw("Mouse X"),
-                -1f,
-                1f
-            );
+            grabbed = true;
+            previousPointerPosition = pointerPosition;
+        }
 
-            // Give the player more leverage as the arm approaches horizontal, where the heavy ball is harder to swing.
-            float horizontalBoost = Mathf.Lerp(
-                1f,
-                2f,
-                Mathf.Abs(Mathf.Sin(angle * Mathf.Deg2Rad))
-            );
+        if (grabbed && Input.GetMouseButton(0))
+        {
+            float deltaX =
+                pointerPosition.x - previousPointerPosition.x;
 
-            speed += mouseX * swingForce * horizontalBoost
-                    * Time.deltaTime * 60f;
+            if (Mathf.Abs(deltaX) >= inputDeadzone)
+            {
+                float horizontalBoost = Mathf.Lerp(
+                    1f,
+                    2f,
+                    Mathf.Abs(Mathf.Sin(angle * Mathf.Deg2Rad))
+                );
+
+                speed += Mathf.Sign(deltaX)
+                       * swingAcceleration
+                       * horizontalBoost
+                       * Time.deltaTime;
+            }
+
+            previousPointerPosition = pointerPosition;
         }
 
         if (Input.GetMouseButtonUp(0))
-            Release();
+            grabbed = false;
     }
 
     private void Swing()
     {
         float deltaTime = Time.deltaTime;
 
-        speed -= Mathf.Sin(angle * Mathf.Deg2Rad) * gravity * deltaTime;
+        speed -= Mathf.Sin(angle * Mathf.Deg2Rad)
+               * gravity
+               * deltaTime;
 
         speed *= Mathf.Pow(damping, deltaTime * 60f);
-
         speed = Mathf.Clamp(speed, -maxSpeed, maxSpeed);
 
         angle += speed * deltaTime;
-
         SetAngle(angle);
     }
 
@@ -186,8 +187,7 @@ public float lockTime = 1f;
         timer = 0f;
         speed = 0f;
 
-        Release();
-
+        grabbed = false;
         state = State.Rising;
     }
 
@@ -202,7 +202,6 @@ public float lockTime = 1f;
         t = Mathf.SmoothStep(0f, 1f, t);
 
         angle = Mathf.Lerp(startAngle, overshootAngle, t);
-
         SetAngle(angle);
 
         if (t >= 1f)
@@ -225,7 +224,6 @@ public float lockTime = 1f;
         t = Mathf.SmoothStep(0f, 1f, t);
 
         angle = Mathf.Lerp(startAngle, lockAngle, t);
-
         SetAngle(angle);
 
         if (t >= 1f)
@@ -233,8 +231,6 @@ public float lockTime = 1f;
             angle = lockAngle;
             timer = lockTime;
             state = State.Locked;
-
-            // Play the lock click sound here
         }
     }
 
@@ -260,46 +256,24 @@ public float lockTime = 1f;
     private bool IsOverBall()
     {
         Canvas canvas = spikeBall.GetComponentInParent<Canvas>();
-        Camera cam = null;
+        Camera camera = null;
 
         if (canvas != null &&
             canvas.renderMode != RenderMode.ScreenSpaceOverlay)
         {
-            cam = canvas.worldCamera != null
-                ? canvas.worldCamera
-                : Camera.main;
+            camera = canvas.worldCamera;
         }
 
         return RectTransformUtility.RectangleContainsScreenPoint(
             spikeBall,
             Input.mousePosition,
-            cam
+            camera
         );
-    }
-
-    private void Grab()
-    {
-        if (grabbed)
-            return;
-
-        grabbed = true;
-
-        oldLockMode = Cursor.lockState;
-        oldCursorVisible = Cursor.visible;
-
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
     }
 
     private void Release()
     {
-        if (!grabbed)
-            return;
-
         grabbed = false;
-
-        Cursor.lockState = oldLockMode;
-        Cursor.visible = oldCursorVisible;
     }
 
     private void Complete()

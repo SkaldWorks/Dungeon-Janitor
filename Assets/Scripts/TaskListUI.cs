@@ -122,6 +122,15 @@ public class TaskListUI : MonoBehaviour
             case TaskType.PickUpBones:
                 return "Pick Up Bones";
 
+            case TaskType.AssembleSkeleton:
+                return "Assemble The Skeleton";
+
+            case TaskType.CleanGoop:
+                return "Clean Goop";
+
+            case TaskType.ReviveSlime:
+                return "Revive The Slime";
+
             default:
                 return type.ToString();
         }

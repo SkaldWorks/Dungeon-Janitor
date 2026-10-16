@@ -7,4 +7,6 @@ public enum TaskType
     PickUpBones,
     AssembleSkeleton,
     CleanGoop,
+    ReviveSlime,
+
 }

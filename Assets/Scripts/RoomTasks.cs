@@ -81,4 +81,48 @@ public class RoomTasks : MonoBehaviour
         if (taskUI != null)
             taskUI.Refresh();
     }
+
+    public bool SetTaskBroken(StartGame task)
+{
+    if (task == null)
+        return false;
+
+    if (tasks == null)
+    {
+        Debug.LogWarning("RoomTasks has not initialized its task list.", this);
+        return false;
+    }
+
+    bool belongsToRoom = false;
+
+    foreach (StartGame roomTask in tasks)
+    {
+        if (roomTask == task)
+        {
+            belongsToRoom = true;
+            break;
+        }
+    }
+
+    if (!belongsToRoom)
+    {
+        Debug.LogWarning(
+            $"Task '{task.name}' does not belong to room '{roomName}'.",
+            this
+        );
+
+        return false;
+    }
+
+    task.roomTasks = this;
+
+    task.resetgame();
+
+    if (task.BrokenCount != null)
+        task.BrokenCount.recount();
+
+    Refresh();
+
+    return true;
+}
 }
