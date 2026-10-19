@@ -58,4 +58,9 @@ public class PlayerController : MonoBehaviour
 
         rb.linearVelocity = velocity;
     }
+
+    public void freezePlayer(bool value)
+    {
+        freeze = value;
+    }
 }

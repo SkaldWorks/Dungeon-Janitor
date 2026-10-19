@@ -12,6 +12,7 @@ public class StartGame : MonoBehaviour, IInteractable
     [Header("Visuals")]
     public GameObject brokenVisual;
     public GameObject repairedVisual;
+    public GameObject ExitButton;
 
     [Header("Minigame")]
     public MonoBehaviour minigame;
@@ -28,6 +29,9 @@ public class StartGame : MonoBehaviour, IInteractable
     {
         minigameInterface = minigame as IMinigame;
         roomTasks = GetComponentInParent<RoomTasks>();
+        if (ExitButton == null)
+            ExitButton = GameObject.Find("ExitButton");
+            ExitButton.SetActive(false);
     }
 
     public void Interact()
@@ -41,7 +45,11 @@ public class StartGame : MonoBehaviour, IInteractable
         }
 
         if (minigameInterface != null)
+        {
             minigameInterface.StartMinigame(this);
+            if (ExitButton != null)
+                ExitButton.SetActive(true);
+        }
     }
 
     public void OnTouchingPlayer()
