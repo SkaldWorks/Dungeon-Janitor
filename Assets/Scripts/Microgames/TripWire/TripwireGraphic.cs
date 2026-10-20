@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 public class TripwireGraphic : MonoBehaviour
 {
-    [SerializeField] private RectTransform[] wireSegments;
+    public RectTransform[] wireSegments;
 
     private bool isVisible;
 

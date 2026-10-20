@@ -9,7 +9,7 @@ public class TripwireDragHandle : MonoBehaviour,
     IDragHandler,
     IPointerUpHandler
 {
-    [SerializeField] private TripwireMinigame minigame;
+    public TripwireMinigame minigame;
 
     private void Awake()
     {

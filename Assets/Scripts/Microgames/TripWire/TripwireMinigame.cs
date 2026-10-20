@@ -5,29 +5,29 @@ using UnityEngine.UI;
 public class TripwireMinigame : MonoBehaviour, IMinigame
 {
     [Header("UI")]
-    [SerializeField] private GameObject minigamePanel;
+    public GameObject minigamePanel;
 
     [Header("Player")]
-    [SerializeField] private PlayerController player;
+    public PlayerController player;
 
     [Header("Tripwire")]
-    [SerializeField] private RectTransform leftAnchor;
-    [SerializeField] private RectTransform[] guideLoops;
-    [SerializeField] private RectTransform rightAnchor;
-    [SerializeField] private RectTransform draggedEnd;
-    [SerializeField] private TripwireGraphic wireGraphic;
+    public RectTransform leftAnchor;
+    public RectTransform[] guideLoops;
+    public RectTransform rightAnchor;
+    public RectTransform draggedEnd;
+    public TripwireGraphic wireGraphic;
 
     [Header("Starting Position")]
-    [SerializeField] private Vector2 resetOffset = new Vector2(100f, -40f);
+    public Vector2 resetOffset = new Vector2(100f, -40f);
 
     [Header("Guide Colors")]
-    [SerializeField] private Color inactiveColor =
+    public Color inactiveColor =
         new Color(0.55f, 0.55f, 0.55f, 1f);
 
-    [SerializeField] private Color activeColor =
+    public Color activeColor =
         new Color(1f, 0.7f, 0.15f, 1f);
 
-    [SerializeField] private Color completedColor =
+    public Color completedColor =
         new Color(0.3f, 1f, 0.4f, 1f);
 
     private StartGame currentSource;

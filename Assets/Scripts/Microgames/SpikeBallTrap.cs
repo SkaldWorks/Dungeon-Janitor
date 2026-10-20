@@ -44,6 +44,10 @@ public class SpikeBallTrap : MonoBehaviour, IMinigame
     private bool grabbed;
     private Vector2 previousPointerPosition;
 
+    // Remember the cursor's original visibility so we can restore it.
+    private bool previousCursorVisibility;
+    private bool cursorVisibilitySaved;
+
     public void StartMinigame(StartGame source)
     {
         Release();
@@ -121,6 +125,12 @@ public class SpikeBallTrap : MonoBehaviour, IMinigame
         {
             grabbed = true;
             previousPointerPosition = pointerPosition;
+
+            // Save the original state once, when the ball is grabbed.
+            previousCursorVisibility = Cursor.visible;
+            cursorVisibilitySaved = true;
+
+            Cursor.visible = false;
         }
 
         if (grabbed && Input.GetMouseButton(0))
@@ -146,7 +156,7 @@ public class SpikeBallTrap : MonoBehaviour, IMinigame
         }
 
         if (Input.GetMouseButtonUp(0))
-            grabbed = false;
+            Release();
     }
 
     private void Swing()
@@ -187,7 +197,7 @@ public class SpikeBallTrap : MonoBehaviour, IMinigame
         timer = 0f;
         speed = 0f;
 
-        grabbed = false;
+        Release();
         state = State.Rising;
     }
 
@@ -274,6 +284,12 @@ public class SpikeBallTrap : MonoBehaviour, IMinigame
     private void Release()
     {
         grabbed = false;
+
+        if (!cursorVisibilitySaved)
+            return;
+
+        Cursor.visible = previousCursorVisibility;
+        cursorVisibilitySaved = false;
     }
 
     private void Complete()
@@ -284,6 +300,12 @@ public class SpikeBallTrap : MonoBehaviour, IMinigame
             source.CompleteRepair();
 
         gameObject.SetActive(false);
+    }
+
+    private void OnApplicationFocus(bool hasFocus)
+    {
+        if (!hasFocus)
+            Release();
     }
 
     private void OnDisable()

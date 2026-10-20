@@ -5,6 +5,7 @@ TagManager:
   serializedVersion: 3
   tags:
   - Broken
+  - GamePanel
   layers:
   - Default
   - TransparentFX
