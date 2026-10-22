@@ -8,10 +8,13 @@ public class MainMenuController : MonoBehaviour
 {
     [Header("Buttons")]
     public Button continueButton;
-    public TMP_Text continueButtonText;
-
     public Button newGameButton;
-    public TMP_Text newGameButtonText;
+    public Button quitButton;
+
+    [Header("Button Labels")]
+    public string continueText = "Continue";
+    public string newGameText = "New Game";
+    public string quitText = "Quit";
 
     [Header("Scene")]
     public string dungeonSceneName = "Dungeon";
@@ -27,14 +30,37 @@ public class MainMenuController : MonoBehaviour
             SaveManager.Instance != null &&
             SaveManager.Instance.HasSaveData;
 
+        // Show Continue only if save data exists.
         if (continueButton != null)
+        {
             continueButton.gameObject.SetActive(hasSave);
+            SetAllButtonTexts(continueButton, continueText);
+        }
 
-        if (continueButtonText != null)
-            continueButtonText.text = "Continue";
+        if (newGameButton != null)
+        {
+            SetAllButtonTexts(newGameButton, newGameText);
+        }
 
-        if (newGameButtonText != null)
-            newGameButtonText.text = "New Game";
+        if (quitButton != null)
+        {
+            SetAllButtonTexts(quitButton, quitText);
+        }
+    }
+
+    private void SetAllButtonTexts(Button button, string label)
+    {
+        if (button == null)
+            return;
+
+        // Includes all child TMP text objects, even nested children.
+        TMP_Text[] texts =
+            button.GetComponentsInChildren<TMP_Text>(true);
+
+        foreach (TMP_Text textObject in texts)
+        {
+            textObject.text = label;
+        }
     }
 
     public void ContinueGame()
@@ -68,6 +94,13 @@ public class MainMenuController : MonoBehaviour
 
         SaveManager.Instance.ResetSaveData();
         LoadDungeon();
+    }
+
+    public void QuitGame()
+    {
+        Debug.Log("Quitting game...");
+
+        Application.Quit();
     }
 
     private void LoadDungeon()
