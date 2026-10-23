@@ -35,10 +35,16 @@ public class NPCDialogue : MonoBehaviour, IInteractable
             return;
         }
 
-        if (IsDialogueActive)
-            dialogueManager.NextLine(this);
-        else
+        if (!IsDialogueActive)
             dialogueManager.StartDialogue(this);
+    }
+
+    void Update()
+    {
+        if (IsDialogueActive && (Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Return)))
+        {
+            dialogueManager.NextLine(this);
+        }
     }
 
     public void OnTouchingPlayer()
