@@ -3927,16 +3927,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpikeBallTrap
   swingArm: {fileID: 74334551}
   spikeBall: {fileID: 837495682}
-  swingAcceleration: 80
+  swingAcceleration: 60
   gravity: 180
   damping: 0.997
   maxSpeed: 180
-  inputDeadzone: 0.05
   targetAngle: 90
   overshoot: 3
   riseTime: 0.2
   fallTime: 0.4
   lockTime: 1
+  inputGraceTime: 0.08
 --- !u!222 &284488099
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -10472,7 +10472,7 @@ CapsuleCollider:
   m_Enabled: 1
   serializedVersion: 2
   m_Radius: 0.5
-  m_Height: 1.45
+  m_Height: 1.85
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!23 &423076110
@@ -13053,7 +13053,7 @@ Light:
   m_Type: 2
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_Intensity: 6.2
-  m_Range: 47.76
+  m_Range: 6.24
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
   m_CookieSize2D: {x: 0.5, y: 0.5}
@@ -15662,7 +15662,7 @@ Light:
   m_Type: 2
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_Intensity: 6.2
-  m_Range: 47.76
+  m_Range: 6.24
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
   m_CookieSize2D: {x: 0.5, y: 0.5}
@@ -17469,7 +17469,7 @@ Light:
   m_Type: 2
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_Intensity: 6.2
-  m_Range: 47.76
+  m_Range: 6.24
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
   m_CookieSize2D: {x: 0.5, y: 0.5}
@@ -17993,7 +17993,7 @@ Light:
   m_Type: 2
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_Intensity: 6.2
-  m_Range: 47.76
+  m_Range: 6.24
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
   m_CookieSize2D: {x: 0.5, y: 0.5}
@@ -26701,7 +26701,7 @@ Light:
   m_Type: 2
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_Intensity: 6.2
-  m_Range: 47.76
+  m_Range: 6.24
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
   m_CookieSize2D: {x: 0.5, y: 0.5}

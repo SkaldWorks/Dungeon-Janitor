@@ -12,7 +12,6 @@ public class SpikeBallTrap : MonoBehaviour, IMinigame
     public float gravity = 180f;
     [SerializeField, Range(0f, 1f)] private float damping = 0.997f;
     public float maxSpeed = 180f;
-    public float inputDeadzone = 0.5f;
 
     [Header("Lock")]
     [SerializeField, Range(45f, 120f)] private float targetAngle = 90f;
@@ -47,6 +46,13 @@ public class SpikeBallTrap : MonoBehaviour, IMinigame
     // Remember the cursor's original visibility so we can restore it.
     private bool previousCursorVisibility;
     private bool cursorVisibilitySaved;
+
+
+    [SerializeField, Min(0.01f)]
+    private float inputGraceTime = 0.08f;
+
+    private float inputGraceTimer;
+    private float inputDirection;
 
     public void StartMinigame(StartGame source)
     {
@@ -117,6 +123,7 @@ public class SpikeBallTrap : MonoBehaviour, IMinigame
         }
     }
 
+
     private void HandleInput()
     {
         Vector2 pointerPosition = Input.mousePosition;
@@ -126,19 +133,29 @@ public class SpikeBallTrap : MonoBehaviour, IMinigame
             grabbed = true;
             previousPointerPosition = pointerPosition;
 
-            // Save the original state once, when the ball is grabbed.
             previousCursorVisibility = Cursor.visible;
             cursorVisibilitySaved = true;
-
             Cursor.visible = false;
         }
 
         if (grabbed && Input.GetMouseButton(0))
         {
-            float deltaX =
-                pointerPosition.x - previousPointerPosition.x;
+            float deltaX = pointerPosition.x - previousPointerPosition.x;
 
-            if (Mathf.Abs(deltaX) >= inputDeadzone)
+            if (deltaX != 0f)
+            {
+                inputDirection = Mathf.Sign(deltaX);
+                inputGraceTimer = inputGraceTime;
+            }
+            else
+            {
+                inputGraceTimer = Mathf.Max(
+                    0f,
+                    inputGraceTimer - Time.deltaTime
+                );
+            }
+
+            if (inputGraceTimer > 0f)
             {
                 float horizontalBoost = Mathf.Lerp(
                     1f,
@@ -146,10 +163,10 @@ public class SpikeBallTrap : MonoBehaviour, IMinigame
                     Mathf.Abs(Mathf.Sin(angle * Mathf.Deg2Rad))
                 );
 
-                speed += Mathf.Sign(deltaX)
-                       * swingAcceleration
-                       * horizontalBoost
-                       * Time.deltaTime;
+                speed += inputDirection
+                    * swingAcceleration
+                    * horizontalBoost
+                    * Time.deltaTime;
             }
 
             previousPointerPosition = pointerPosition;
@@ -158,7 +175,6 @@ public class SpikeBallTrap : MonoBehaviour, IMinigame
         if (Input.GetMouseButtonUp(0))
             Release();
     }
-
     private void Swing()
     {
         float deltaTime = Time.deltaTime;
@@ -283,6 +299,8 @@ public class SpikeBallTrap : MonoBehaviour, IMinigame
 
     private void Release()
     {
+        inputGraceTimer = 0f;
+        inputDirection = 0f;
         grabbed = false;
 
         if (!cursorVisibilitySaved)
