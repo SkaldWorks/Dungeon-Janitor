@@ -21,7 +21,7 @@ public class GameStateManager : MonoBehaviour
     public bool IsPlaying => CurrentState == GameState.Playing;
 
     // Player movement is allowed only when playing with no game panel open.
-    public bool CanPlayerMove => IsPlaying && !IsAnyGamePanelOpen();
+    public bool CanPlayerMove => IsPlaying && !IsPanelOpen();
 
     private GameObject[] gamePanels;
 
@@ -77,7 +77,7 @@ public class GameStateManager : MonoBehaviour
         gamePanels = panels.ToArray();
     }
 
-    private bool IsAnyGamePanelOpen()
+    private bool IsPanelOpen()
     {
         if (gamePanels == null)
             RefreshGamePanels();
