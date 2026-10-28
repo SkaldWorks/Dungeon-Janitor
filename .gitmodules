@@ -1,0 +1,3 @@
+[submodule "Assets/SkaldWorksUtilities"]
+	path = Assets/SkaldWorksUtilities
+	url = https://github.com/SkaldWorks/SkaldWorks_Utilities_Unity.git

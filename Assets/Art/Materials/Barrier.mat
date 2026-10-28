@@ -20,7 +20,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: New Material 1
+  m_Name: Barrier
   m_Shader: {fileID: -6465566751694194690, guid: a71df59177d893941a6290b64b24dce8, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
