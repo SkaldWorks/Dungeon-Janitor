@@ -19,14 +19,27 @@ public class Bezier_Viz : MonoBehaviour
 
     List<GameObject> points = new List<GameObject>();
 
+    public RectTransform pointSpawnArea;
     void Awake()
     {
+        // Use the spawn area, or fall back to curveArea
+        RectTransform spawnArea = pointSpawnArea != null
+            ? pointSpawnArea
+            : curveArea;
+
         for (int i = 0; i < startingPoints.Count; i++)
         {
-            GameObject point = Instantiate(pointPrefab, curveArea);
-            point.GetComponent<RectTransform>().anchoredPosition = startingPoints[i];
+            GameObject point = Instantiate(
+                pointPrefab,
+                spawnArea,
+                false
+            );
+
+            point.GetComponent<RectTransform>().anchoredPosition =
+                startingPoints[i];
 
             Point_Viz viz = point.GetComponent<Point_Viz>();
+
             if (viz != null)
                 viz.SetMovable(i != 0 && i != startingPoints.Count - 1);
 

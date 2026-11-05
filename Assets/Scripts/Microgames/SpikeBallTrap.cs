@@ -1,24 +1,27 @@
-
 using UnityEngine;
 
 public class SpikeBallTrap : MonoBehaviour, IMinigame
 {
     [Header("References")]
-    public RectTransform swingArm;
-    public RectTransform spikeBall;
+    [SerializeField] private RectTransform swingArm;
+    [SerializeField] private RectTransform spikeBall;
 
-    [Header("Swing")]
-    public float swingAcceleration = 120f;
-    public float gravity = 180f;
-    [SerializeField, Range(0f, 1f)] private float damping = 0.997f;
-    public float maxSpeed = 180f;
+    [Header("Physics")]
+    [SerializeField, Min(0f)] private float gravity = 180f;
+    [SerializeField, Min(0f)] private float swingAcceleration = 90f;
+    [SerializeField, Min(0f)] private float damping = 0.8f;
+    [SerializeField, Min(0f)] private float maxSpeed = 100f;
 
-    [Header("Lock")]
+    [Header("Input")]
+    [SerializeField, Min(0f)] private float inputStrength = 1f;
+    [SerializeField, Min(0f)] private float pointerSensitivity = 0.005f;
+
+    [Header("Goal")]
     [SerializeField, Range(45f, 120f)] private float targetAngle = 90f;
-    public float overshoot = 3f;
-    public float riseTime = 0.2f;
-    public float fallTime = 0.4f;
-    public float lockTime = 1f;
+    [SerializeField, Min(0f)] private float overshoot = 3f;
+    [SerializeField, Min(0.01f)] private float riseTime = 0.2f;
+    [SerializeField, Min(0.01f)] private float fallTime = 0.4f;
+    [SerializeField, Min(0f)] private float lockTime = 1f;
 
     private enum State
     {
@@ -36,23 +39,12 @@ public class SpikeBallTrap : MonoBehaviour, IMinigame
     private float speed;
     private float timer;
 
-    private float lockAngle;
-    private float overshootAngle;
     private float startAngle;
+    private float targetLockAngle;
+    private float overshootAngle;
 
     private bool grabbed;
     private Vector2 previousPointerPosition;
-
-    // Remember the cursor's original visibility so we can restore it.
-    private bool previousCursorVisibility;
-    private bool cursorVisibilitySaved;
-
-
-    [SerializeField, Min(0.01f)]
-    private float inputGraceTime = 0.08f;
-
-    private float inputGraceTimer;
-    private float inputDirection;
 
     public void StartMinigame(StartGame source)
     {
@@ -61,7 +53,7 @@ public class SpikeBallTrap : MonoBehaviour, IMinigame
         if (swingArm == null || spikeBall == null)
         {
             Debug.LogError(
-                "SpikeBallTrap: Assign Swing Arm and Spike Ball.",
+                "SpikeBallTrap: Missing UI references.",
                 this
             );
 
@@ -85,24 +77,21 @@ public class SpikeBallTrap : MonoBehaviour, IMinigame
         speed = 0f;
         timer = 0f;
 
-        lockAngle = 0f;
-        overshootAngle = 0f;
-        startAngle = 0f;
-
-        grabbed = false;
-        state = State.Swinging;
-
         SetAngle(0f);
+
+        state = State.Swinging;
         gameObject.SetActive(true);
     }
 
     private void Update()
     {
+        float deltaTime = Time.deltaTime;
+
         switch (state)
         {
             case State.Swinging:
                 HandleInput();
-                Swing();
+                UpdatePhysics(deltaTime);
 
                 if (Mathf.Abs(angle) >= targetAngle)
                     StartRising();
@@ -110,83 +99,73 @@ public class SpikeBallTrap : MonoBehaviour, IMinigame
                 break;
 
             case State.Rising:
-                UpdateRising();
+                UpdateTransition(deltaTime, overshootAngle, riseTime);
                 break;
 
             case State.Falling:
-                UpdateFalling();
+                UpdateTransition(deltaTime, targetLockAngle, fallTime);
                 break;
 
             case State.Locked:
-                UpdateLocked();
+                timer -= deltaTime;
+
+                if (timer <= 0f)
+                    Complete();
+
                 break;
         }
     }
 
-
     private void HandleInput()
     {
-        Vector2 pointerPosition = Input.mousePosition;
-
         if (Input.GetMouseButtonDown(0) && IsOverBall())
         {
             grabbed = true;
-            previousPointerPosition = pointerPosition;
-
-            previousCursorVisibility = Cursor.visible;
-            cursorVisibilitySaved = true;
-            Cursor.visible = false;
+            previousPointerPosition = Input.mousePosition;
         }
 
         if (grabbed && Input.GetMouseButton(0))
         {
-            float deltaX = pointerPosition.x - previousPointerPosition.x;
+            Vector2 currentPosition = Input.mousePosition;
 
-            if (deltaX != 0f)
-            {
-                inputDirection = Mathf.Sign(deltaX);
-                inputGraceTimer = inputGraceTime;
-            }
-            else
-            {
-                inputGraceTimer = Mathf.Max(
-                    0f,
-                    inputGraceTimer - Time.deltaTime
-                );
-            }
+            float deltaX = currentPosition.x -
+                           previousPointerPosition.x;
 
-            if (inputGraceTimer > 0f)
-            {
-                float horizontalBoost = Mathf.Lerp(
-                    1f,
-                    2f,
-                    Mathf.Abs(Mathf.Sin(angle * Mathf.Deg2Rad))
-                );
+            inputDirection = Mathf.Clamp(
+                deltaX * pointerSensitivity,
+                -1f,
+                1f
+            );
 
-                speed += inputDirection
-                    * swingAcceleration
-                    * horizontalBoost
-                    * Time.deltaTime;
-            }
-
-            previousPointerPosition = pointerPosition;
+            previousPointerPosition = currentPosition;
+        }
+        else
+        {
+            inputDirection = 0f;
         }
 
         if (Input.GetMouseButtonUp(0))
             Release();
     }
-    private void Swing()
+
+    private float inputDirection;
+
+    private void UpdatePhysics(float deltaTime)
     {
-        float deltaTime = Time.deltaTime;
+        float input = inputDirection * inputStrength;
 
-        speed -= Mathf.Sin(angle * Mathf.Deg2Rad)
-               * gravity
-               * deltaTime;
+        float gravityForce =
+            -Mathf.Sin(angle * Mathf.Deg2Rad) * gravity;
 
-        speed *= Mathf.Pow(damping, deltaTime * 60f);
+        speed += (gravityForce + input * swingAcceleration)
+                 * deltaTime;
+
+        speed *= Mathf.Exp(-damping * deltaTime);
+
         speed = Mathf.Clamp(speed, -maxSpeed, maxSpeed);
 
         angle += speed * deltaTime;
+
         SetAngle(angle);
     }
 
@@ -197,75 +176,52 @@ public class SpikeBallTrap : MonoBehaviour, IMinigame
         if (Mathf.Approximately(direction, 0f))
             direction = 1f;
 
-        lockAngle = direction * targetAngle;
+        targetLockAngle = direction * targetAngle;
 
-        float desiredOvershoot = Mathf.Min(
+        overshootAngle = direction * Mathf.Min(
             targetAngle + overshoot,
             179f
         );
 
-        overshootAngle = direction * Mathf.Max(
-            Mathf.Abs(angle),
-            desiredOvershoot
-        );
-
         startAngle = angle;
         timer = 0f;
-        speed = 0f;
 
         Release();
+
         state = State.Rising;
     }
 
-    private void UpdateRising()
+    private void UpdateTransition(
+        float deltaTime,
+        float destination,
+        float duration)
     {
-        timer += Time.deltaTime;
+        timer += deltaTime;
 
-        float t = Mathf.Clamp01(
-            timer / Mathf.Max(0.01f, riseTime)
-        );
-
+        float t = Mathf.Clamp01(timer / duration);
         t = Mathf.SmoothStep(0f, 1f, t);
 
-        angle = Mathf.Lerp(startAngle, overshootAngle, t);
+        angle = Mathf.Lerp(startAngle, destination, t);
+
         SetAngle(angle);
 
-        if (t >= 1f)
+        if (timer >= duration)
         {
-            angle = overshootAngle;
-            timer = 0f;
-            startAngle = angle;
-            state = State.Falling;
+            angle = destination;
+            SetAngle(angle);
+
+            if (state == State.Rising)
+            {
+                startAngle = angle;
+                timer = 0f;
+                state = State.Falling;
+            }
+            else
+            {
+                timer = lockTime;
+                state = State.Locked;
+            }
         }
-    }
-
-    private void UpdateFalling()
-    {
-        timer += Time.deltaTime;
-
-        float t = Mathf.Clamp01(
-            timer / Mathf.Max(0.01f, fallTime)
-        );
-
-        t = Mathf.SmoothStep(0f, 1f, t);
-
-        angle = Mathf.Lerp(startAngle, lockAngle, t);
-        SetAngle(angle);
-
-        if (t >= 1f)
-        {
-            angle = lockAngle;
-            timer = lockTime;
-            state = State.Locked;
-        }
-    }
-
-    private void UpdateLocked()
-    {
-        timer -= Time.deltaTime;
-
-        if (timer <= 0f)
-            Complete();
     }
 
     private void SetAngle(float value)
@@ -282,13 +238,11 @@ public class SpikeBallTrap : MonoBehaviour, IMinigame
     private bool IsOverBall()
     {
         Canvas canvas = spikeBall.GetComponentInParent<Canvas>();
-        Camera camera = null;
 
-        if (canvas != null &&
-            canvas.renderMode != RenderMode.ScreenSpaceOverlay)
-        {
-            camera = canvas.worldCamera;
-        }
+        Camera camera = canvas != null &&
+                        canvas.renderMode != RenderMode.ScreenSpaceOverlay
+            ? canvas.worldCamera
+            : null;
 
         return RectTransformUtility.RectangleContainsScreenPoint(
             spikeBall,
@@ -299,15 +253,8 @@ public class SpikeBallTrap : MonoBehaviour, IMinigame
 
     private void Release()
     {
-        inputGraceTimer = 0f;
-        inputDirection = 0f;
         grabbed = false;
-
-        if (!cursorVisibilitySaved)
-            return;
-
-        Cursor.visible = previousCursorVisibility;
-        cursorVisibilitySaved = false;
+        inputDirection = 0f;
     }
 
     private void Complete()

@@ -177,6 +177,33 @@ public class StartGame : MonoBehaviour, IInteractable
         EditorUtility.SetDirty(this);
     }
 #endif
+#if UNITY_EDITOR
+
+    [ContextMenu("Generate Unique Save ID")]
+    private void GenerateUniqueSaveId()
+    {
+        if (Application.isPlaying)
+            return;
+
+        // Don't generate IDs on the prefab asset itself.
+        if (PrefabUtility.IsPartOfPrefabAsset(gameObject))
+        {
+            Debug.LogWarning(
+                "Select a prefab instance in the scene, not the prefab asset!"
+            );
+            return;
+        }
+
+        saveId = System.Guid.NewGuid().ToString("N");
+
+        EditorUtility.SetDirty(this);
+
+        // Save the unique ID as an override on this prefab instance.
+        PrefabUtility.RecordPrefabInstancePropertyModifications(this);
+
+        Debug.Log("Generated unique Save ID for " + gameObject.name);
+    }
+#endif
 }
 
 public interface IMinigame

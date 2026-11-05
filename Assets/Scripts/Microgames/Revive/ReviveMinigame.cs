@@ -49,6 +49,7 @@ public class ReviveMinigame : MonoBehaviour, IMinigame
             player.freeze = true;
 
         minigamePanel.SetActive(true);
+        SortPoints();
 
         ShowTarget();
         ResetPlayer();
@@ -146,5 +147,19 @@ public class ReviveMinigame : MonoBehaviour, IMinigame
             player.freeze = false;
 
         source = null;
+    }
+
+    void SortPoints()
+    {
+        Point_Viz[] points =
+            playerBezier.pointSpawnArea.GetComponentsInChildren<Point_Viz>(true);
+
+        foreach (Point_Viz point in points)
+        {
+            if (!point.movable)
+                point.transform.SetAsFirstSibling();
+            else
+                point.transform.SetAsLastSibling();
+        }
     }
 }
