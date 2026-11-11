@@ -4,6 +4,8 @@ public class Pickup : MonoBehaviour, IMinigame
 {
     private StartGame currentSource;
     public AudioClip pickupSound;
+    public AudioSource audioSource;
+    public float volume = 0.25f;
 
     public void StartMinigame(StartGame source)
     {
@@ -11,7 +13,7 @@ public class Pickup : MonoBehaviour, IMinigame
 
         if (currentSource != null)
         {
-            AudioSource.PlayClipAtPoint(pickupSound, transform.position);
+            audioSource.PlayOneShot(pickupSound, volume);
             currentSource.CompleteRepair();
             currentSource = null;
         }

@@ -39,6 +39,7 @@ public class StartGame : MonoBehaviour, IInteractable
     [Header("Audio")]
     [SerializeField] private AudioSource audioSource;
     public AudioClip winSound;
+    public float volume = 0.25f;
 
     public string SaveId => saveId;
 
@@ -128,7 +129,7 @@ public class StartGame : MonoBehaviour, IInteractable
     public void PlayWinSound()
     {
         if (winSound != null && audioSource != null)
-            audioSource.PlayOneShot(winSound);
+            audioSource.PlayOneShot(winSound, volume);
     }
 
     public void CompleteRepair()
@@ -137,7 +138,7 @@ public class StartGame : MonoBehaviour, IInteractable
             return;
 
         if (winSound != null && audioSource != null)
-            audioSource.PlayOneShot(winSound);
+            audioSource.PlayOneShot(winSound, volume);
 
         repaired = true;
         UpdateRepairVisuals();

@@ -22,7 +22,6 @@ public class GoopClean : MonoBehaviour, IMinigame
     public AudioSource audioSource;
     public AudioSource scrubAudioSource;
     public AudioClip scrubSound;
-    public AudioClip completeSound;
 
     [Range(0.1f, 4f)]
     public float minScrubPitch = 0.8f;
@@ -344,9 +343,6 @@ public class GoopClean : MonoBehaviour, IMinigame
         hasLastPosition = false;
 
         StopScrubbing();
-
-        if (audioSource != null && completeSound != null)
-            audioSource.PlayOneShot(completeSound);
 
         if (source != null)
             source.CompleteRepair();
