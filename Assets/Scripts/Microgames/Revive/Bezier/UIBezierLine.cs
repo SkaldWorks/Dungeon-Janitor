@@ -1,3 +1,4 @@
+
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -7,27 +8,17 @@ public class UIBezierLine : MaskableGraphic
 {
     public float lineWidth = 5f;
 
-    public float LineWidth
-    {
-        get => lineWidth;
+    [Header("Sine Wave")]
+    public float waveAmplitude = 8f;
+    public float waveCycles = 2f;
+    public float waveSpeed = 2f;
 
-        set
-        {
-            lineWidth = value;
-            SetVerticesDirty();
-        }
-    }
-
-    private List<Vector2> curvePoints =
-        new List<Vector2>();
+    private List<Vector2> curvePoints = new List<Vector2>();
 
     public void SetPoints(List<Vector2> points)
     {
         if (points == null)
-        {
-            SetVerticesDirty();
             return;
-        }
 
         curvePoints = points;
         SetVerticesDirty();
@@ -36,8 +27,30 @@ public class UIBezierLine : MaskableGraphic
     protected override void Awake()
     {
         base.Awake();
-
         raycastTarget = false;
+    }
+
+    void Update()
+    {
+        // Rebuild the mesh so the wave animates.
+        if (waveAmplitude != 0)
+            SetVerticesDirty();
+    }
+
+    Vector2 GetWavePoint(int index)
+    {
+        float t = index / (float)(curvePoints.Count - 1);
+
+        float wave = Mathf.Sin(
+            t * waveCycles * Mathf.PI * 2f +
+            Time.unscaledTime * waveSpeed
+        );
+
+        // Keep the two ends of the line in their original positions.
+        float envelope = Mathf.Sin(t * Mathf.PI);
+
+        return curvePoints[index] +
+               Vector2.up * wave * waveAmplitude * envelope;
     }
 
     protected override void OnPopulateMesh(VertexHelper vh)
@@ -49,33 +62,27 @@ public class UIBezierLine : MaskableGraphic
 
         float halfWidth = lineWidth * 0.5f;
 
-        // Create two vertices at every point:
         for (int i = 0; i < curvePoints.Count; i++)
         {
-            Vector2 point = curvePoints[i];
+            Vector2 point = GetWavePoint(i);
 
             Vector2 direction;
 
             if (i == 0)
             {
-                // First point: use the direction toward the next point.
-                direction =
-                    curvePoints[1] - curvePoints[0];
+                direction = GetWavePoint(1) - point;
             }
             else if (i == curvePoints.Count - 1)
             {
-                // Last point: use the direction from the previous point.
-                direction =
-                    curvePoints[i] - curvePoints[i - 1];
+                direction = point - GetWavePoint(i - 1);
             }
             else
             {
-                // Middle point: use both neighboring directions.
                 Vector2 directionToNext =
-                    curvePoints[i + 1] - curvePoints[i];
+                    GetWavePoint(i + 1) - point;
 
                 Vector2 directionFromPrevious =
-                    curvePoints[i] - curvePoints[i - 1];
+                    point - GetWavePoint(i - 1);
 
                 direction =
                     directionToNext.normalized +
@@ -87,38 +94,23 @@ public class UIBezierLine : MaskableGraphic
 
             direction.Normalize();
 
-            // Get a vector perpendicular to the line.
             Vector2 normal =
                 new Vector2(-direction.y, direction.x);
 
-            // Create the two sides of the line.
-            Vector2 left =
-                point + normal * halfWidth;
-
-            Vector2 right =
-                point - normal * halfWidth;
+            Vector2 left = point + normal * halfWidth;
+            Vector2 right = point - normal * halfWidth;
 
             vh.AddVert(left, color, Vector2.zero);
             vh.AddVert(right, color, Vector2.zero);
         }
 
-        // Connect neighboring pairs of vertices into quads.
         for (int i = 0; i < curvePoints.Count - 1; i++)
         {
             int current = i * 2;
             int next = (i + 1) * 2;
 
-            vh.AddTriangle(
-                current,
-                next,
-                next + 1
-            );
-
-            vh.AddTriangle(
-                current,
-                next + 1,
-                current + 1
-            );
+            vh.AddTriangle(current, next, next + 1);
+            vh.AddTriangle(current, next + 1, current + 1);
         }
     }
 }

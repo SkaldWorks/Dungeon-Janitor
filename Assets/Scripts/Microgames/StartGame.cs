@@ -1,4 +1,3 @@
-
 using UnityEngine;
 
 #if UNITY_EDITOR
@@ -36,6 +35,10 @@ public class StartGame : MonoBehaviour, IInteractable
     public RoomTasks roomTasks;
 
     private IMinigame minigameInterface;
+
+    [Header("Audio")]
+    [SerializeField] private AudioSource audioSource;
+    public AudioClip winSound;
 
     public string SaveId => saveId;
 
@@ -77,6 +80,7 @@ public class StartGame : MonoBehaviour, IInteractable
 
         UpdateRepairVisuals();
     }
+
     private void UpdateRepairVisuals()
     {
         if (brokenVisual != null)
@@ -121,10 +125,19 @@ public class StartGame : MonoBehaviour, IInteractable
     {
     }
 
+    public void PlayWinSound()
+    {
+        if (winSound != null && audioSource != null)
+            audioSource.PlayOneShot(winSound);
+    }
+
     public void CompleteRepair()
     {
         if (repaired)
             return;
+
+        if (winSound != null && audioSource != null)
+            audioSource.PlayOneShot(winSound);
 
         repaired = true;
         UpdateRepairVisuals();
@@ -141,7 +154,6 @@ public class StartGame : MonoBehaviour, IInteractable
         if (ProgressManager.Instance != null)
             ProgressManager.Instance.RefreshProgress();
     }
-
     public void resetgame()
     {
         repaired = false;
@@ -177,8 +189,8 @@ public class StartGame : MonoBehaviour, IInteractable
         EditorUtility.SetDirty(this);
     }
 #endif
-#if UNITY_EDITOR
 
+#if UNITY_EDITOR
     [ContextMenu("Generate Unique Save ID")]
     private void GenerateUniqueSaveId()
     {

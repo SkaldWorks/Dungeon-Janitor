@@ -1,10 +1,9 @@
-
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
-[RequireComponent(typeof(RectTransform), typeof(Image), typeof(AudioSource))]
+[RequireComponent(typeof(RectTransform), typeof(Image))]
 public class DraggableSprite : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerEnterHandler, IPointerExitHandler
 {
     [Header("Target")]
@@ -28,9 +27,12 @@ public class DraggableSprite : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     [SerializeField] private float colorSpeed = 10f;
 
     [Header("Placement Effect")]
-    [SerializeField] private AudioClip placementSound;
+    public AudioSource audioSource;
+    public AudioClip placementSound;
+
     [Range(0f, 1f)]
     [SerializeField] private float soundVolume = 1f;
+
     [SerializeField] private float popScale = 1.08f;
     [SerializeField] private float popDuration = 0.1f;
     [SerializeField] private float settleDuration = 0.15f;
@@ -41,7 +43,6 @@ public class DraggableSprite : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     private SkeletonMinigame minigame;
     private RectTransform rectTransform;
     private Image image;
-    private AudioSource audioSource;
 
     private Vector2 startPosition;
     private Quaternion startRotation;
@@ -208,7 +209,7 @@ public class DraggableSprite : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             rectTransform.rotation = target.rotation;
             IsPlaced = true;
 
-            if (placementSound != null)
+            if (audioSource != null && placementSound != null)
                 audioSource.PlayOneShot(placementSound, soundVolume);
 
             StartCoroutine(PlacementEffect());
@@ -224,7 +225,6 @@ public class DraggableSprite : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     private IEnumerator PlacementEffect()
     {
         placementAnimating = true;
-
 
         float elapsed = 0f;
 

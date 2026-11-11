@@ -18,6 +18,25 @@ public class GoopClean : MonoBehaviour, IMinigame
 
     public float cleanSpeed = 0.5f;
 
+    [Header("Audio")]
+    public AudioSource audioSource;
+    public AudioSource scrubAudioSource;
+    public AudioClip scrubSound;
+    public AudioClip completeSound;
+
+    [Range(0.1f, 4f)]
+    public float minScrubPitch = 0.8f;
+
+    [Range(0.1f, 4f)]
+    public float maxScrubPitch = 1.2f;
+
+    [Range(0f, 1f)]
+    public float scrubVolume = 0.5f;
+
+    public float scrubInterval = 0.2f;
+
+    private float scrubTimer;
+
     private Texture2D workingTexture;
     private StartGame source;
 
@@ -52,6 +71,8 @@ public class GoopClean : MonoBehaviour, IMinigame
 
         this.source = source;
 
+        StopScrubbing();
+
         if (workingTexture != null)
             Destroy(workingTexture);
 
@@ -76,7 +97,6 @@ public class GoopClean : MonoBehaviour, IMinigame
             if (dirty.a > alphaThreshold)
             {
                 totalVisiblePixels++;
-
                 workingPixels[i] = dirty;
             }
             else
@@ -117,6 +137,8 @@ public class GoopClean : MonoBehaviour, IMinigame
                 lastPosition = position;
                 hasLastPosition = true;
 
+                StartScrubbing();
+
                 CleanLine(position, position);
             }
         }
@@ -128,8 +150,11 @@ public class GoopClean : MonoBehaviour, IMinigame
             if (!GetPixelPosition(Input.mousePosition, out position))
             {
                 hasLastPosition = false;
+                StopScrubbing();
                 return;
             }
+
+            StartScrubbing();
 
             if (hasLastPosition)
                 CleanLine(lastPosition, position);
@@ -143,6 +168,7 @@ public class GoopClean : MonoBehaviour, IMinigame
         if (Input.GetMouseButtonUp(0))
         {
             hasLastPosition = false;
+            StopScrubbing();
         }
 
         if (textureChanged)
@@ -152,6 +178,31 @@ public class GoopClean : MonoBehaviour, IMinigame
 
             textureChanged = false;
         }
+    }
+
+    private void StartScrubbing()
+    {
+        if (scrubAudioSource == null || scrubSound == null)
+            return;
+
+        scrubTimer -= Time.deltaTime;
+
+        if (scrubTimer <= 0f)
+        {
+            scrubAudioSource.pitch = Random.Range(
+                minScrubPitch,
+                maxScrubPitch
+            );
+
+            scrubAudioSource.PlayOneShot(scrubSound, scrubVolume);
+
+            scrubTimer = scrubInterval;
+        }
+    }
+
+    private void StopScrubbing()
+    {
+        scrubTimer = 0f;
     }
 
     private bool GetPixelPosition(
@@ -205,13 +256,13 @@ public class GoopClean : MonoBehaviour, IMinigame
 
         float distance = Vector2.Distance(start, end);
 
-        // keeps it from skipping pixels when the mouse moves fast
+        // Keeps it from skipping pixels when the mouse moves fast.
         int steps = Mathf.Max(
             1,
             Mathf.CeilToInt(distance / size)
         );
 
-        //moving the mouse faster doesnt make you clean faster
+        // Moving the mouse faster doesn't make you clean faster.
         float amount = (cleanSpeed * Time.deltaTime) / steps;
 
         for (int i = 0; i <= steps; i++)
@@ -260,11 +311,11 @@ public class GoopClean : MonoBehaviour, IMinigame
 
                 int index = py * dirtyTexture.width + px;
 
-                // Transparent parts of the PNG aren't considered goop,
+                // Transparent parts of the PNG aren't considered goop.
                 if (dirtyPixels[index].a <= alphaThreshold)
                     continue;
 
-                // Prevent the same pixel from being counted twice
+                // Prevent the same pixel from being counted twice.
                 if (cleanedPixels[index] >= 1f)
                     continue;
 
@@ -276,7 +327,7 @@ public class GoopClean : MonoBehaviour, IMinigame
                     fullyCleanedPixels++;
                 }
 
-                // Blend between the dirty and clean versions based on how much this pixel has been washed
+                // Blend between dirty and clean versions.
                 workingPixels[index] = Color.Lerp(
                     dirtyPixels[index],
                     cleanPixels[index],
@@ -292,6 +343,11 @@ public class GoopClean : MonoBehaviour, IMinigame
     {
         hasLastPosition = false;
 
+        StopScrubbing();
+
+        if (audioSource != null && completeSound != null)
+            audioSource.PlayOneShot(completeSound);
+
         if (source != null)
             source.CompleteRepair();
 
@@ -300,6 +356,8 @@ public class GoopClean : MonoBehaviour, IMinigame
 
     private void OnDestroy()
     {
+        StopScrubbing();
+
         if (workingTexture != null)
             Destroy(workingTexture);
     }
