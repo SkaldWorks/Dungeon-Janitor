@@ -1,11 +1,11 @@
 
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
-[RequireComponent(typeof(RectTransform), typeof(Image))]
-public class DraggableSprite : MonoBehaviour,
-    IBeginDragHandler, IDragHandler, IEndDragHandler
+[RequireComponent(typeof(RectTransform), typeof(Image), typeof(AudioSource))]
+public class DraggableSprite : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerEnterHandler, IPointerExitHandler
 {
     [Header("Target")]
     public RectTransform target;
@@ -21,12 +21,27 @@ public class DraggableSprite : MonoBehaviour,
     [Range(0f, 1f)]
     public float alphaHitTestThreshold = 0.001f;
 
+    [Header("Hover Animation")]
+    [SerializeField] private float hoverScale = 1.1f;
+    [SerializeField] private float hoverSpeed = 10f;
+    [SerializeField] private Color hoverColor = new Color(0.85f, 0.85f, 0.85f, 1f);
+    [SerializeField] private float colorSpeed = 10f;
+
+    [Header("Placement Effect")]
+    [SerializeField] private AudioClip placementSound;
+    [Range(0f, 1f)]
+    [SerializeField] private float soundVolume = 1f;
+    [SerializeField] private float popScale = 1.08f;
+    [SerializeField] private float popDuration = 0.1f;
+    [SerializeField] private float settleDuration = 0.15f;
+
     public RectTransform Target => target;
     public bool IsPlaced { get; private set; }
 
     private SkeletonMinigame minigame;
     private RectTransform rectTransform;
     private Image image;
+    private AudioSource audioSource;
 
     private Vector2 startPosition;
     private Quaternion startRotation;
@@ -34,11 +49,24 @@ public class DraggableSprite : MonoBehaviour,
     private bool dragging;
     private Vector3 pointerOffset;
 
+    private Vector3 originalScale;
+    private Vector3 targetScale;
+    private Color originalColor;
+    private Color targetColor;
+
+    private bool placementAnimating;
+    private static bool anyPieceDragging;
+
     internal void Initialize(SkeletonMinigame owner)
     {
         rectTransform = GetComponent<RectTransform>();
         image = GetComponent<Image>();
         minigame = owner;
+
+        originalScale = rectTransform.localScale;
+        targetScale = originalScale;
+        originalColor = image.color;
+        targetColor = originalColor;
 
         image.raycastTarget = true;
         image.alphaHitTestMinimumThreshold = 0f;
@@ -74,6 +102,27 @@ public class DraggableSprite : MonoBehaviour,
 
         IsPlaced = false;
         dragging = false;
+
+        targetScale = originalScale;
+        targetColor = originalColor;
+    }
+
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        if (!CanDrag() || dragging || anyPieceDragging)
+            return;
+
+        targetScale = originalScale * hoverScale;
+        targetColor = hoverColor;
+    }
+
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        if (dragging)
+            return;
+
+        targetScale = originalScale;
+        targetColor = originalColor;
     }
 
     public void OnBeginDrag(PointerEventData eventData)
@@ -91,6 +140,7 @@ public class DraggableSprite : MonoBehaviour,
 
         pointerOffset = rectTransform.position - pointerPosition;
         dragging = true;
+        anyPieceDragging = true;
     }
 
     public void OnDrag(PointerEventData eventData)
@@ -111,6 +161,21 @@ public class DraggableSprite : MonoBehaviour,
 
     private void Update()
     {
+        if (!placementAnimating)
+        {
+            rectTransform.localScale = Vector3.Lerp(
+                rectTransform.localScale,
+                targetScale,
+                Time.deltaTime * hoverSpeed
+            );
+
+            image.color = Color.Lerp(
+                image.color,
+                targetColor,
+                Time.deltaTime * colorSpeed
+            );
+        }
+
         if (!dragging || !CanDrag())
             return;
 
@@ -130,6 +195,10 @@ public class DraggableSprite : MonoBehaviour,
             return;
 
         dragging = false;
+        anyPieceDragging = false;
+
+        targetScale = originalScale;
+        targetColor = originalColor;
 
         if (CanDrag() &&
             minigame.TryPlace(this, eventData.position, eventData.pressEventCamera) &&
@@ -138,12 +207,67 @@ public class DraggableSprite : MonoBehaviour,
             rectTransform.position = target.position;
             rectTransform.rotation = target.rotation;
             IsPlaced = true;
+
+            if (placementSound != null)
+                audioSource.PlayOneShot(placementSound, soundVolume);
+
+            StartCoroutine(PlacementEffect());
+
             minigame.PiecePlaced();
         }
         else
         {
             //ResetPiece();
         }
+    }
+
+    private IEnumerator PlacementEffect()
+    {
+        placementAnimating = true;
+
+
+        float elapsed = 0f;
+
+        // Pop
+        while (elapsed < popDuration)
+        {
+            elapsed += Time.deltaTime;
+
+            float t = Mathf.Clamp01(elapsed / popDuration);
+            t = Mathf.SmoothStep(0f, 1f, t);
+
+            rectTransform.localScale = Vector3.Lerp(
+                originalScale,
+                originalScale * popScale,
+                t
+            );
+
+            yield return null;
+        }
+
+        elapsed = 0f;
+
+        // Settle
+        while (elapsed < settleDuration)
+        {
+            elapsed += Time.deltaTime;
+
+            float t = Mathf.Clamp01(elapsed / settleDuration);
+            t = Mathf.SmoothStep(0f, 1f, t);
+
+            rectTransform.localScale = Vector3.Lerp(
+                originalScale * popScale,
+                originalScale,
+                t
+            );
+
+            yield return null;
+        }
+
+        rectTransform.localScale = originalScale;
+        image.color = originalColor;
+
+        placementAnimating = false;
     }
 
     private bool CanDrag()

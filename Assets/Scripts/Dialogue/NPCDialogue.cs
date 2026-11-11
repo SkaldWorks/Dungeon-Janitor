@@ -1,9 +1,17 @@
+
 using System;
 using UnityEngine;
 using UnityEngine.Events;
 
 public class NPCDialogue : MonoBehaviour, IInteractable
 {
+    [Header("Speaker")]
+    [Tooltip("The name of this NPC.")]
+    public string speakerName;
+
+    [Tooltip("The portrait displayed when this NPC speaks.")]
+    public Sprite portrait;
+
     [Serializable]
     public class DialogueLine
     {
@@ -28,17 +36,10 @@ public class NPCDialogue : MonoBehaviour, IInteractable
     [HideInInspector]
     public DialogueManager dialogueManager;
 
-    /// <summary>
-    /// Checks whether this NPC currently has an active dialogue.
-    /// </summary>
-    /// <returns>True if this NPC has an active dialogue; otherwise, false.</returns>
     public bool IsDialogueActive =>
         dialogueManager != null &&
         dialogueManager.IsDialogueActiveFor(this);
 
-    /// <summary>
-    /// Starts a dialogue with this NPC if one is not already active.
-    /// </summary>
     public void Interact()
     {
         if (dialogueManager == null)
@@ -59,16 +60,10 @@ public class NPCDialogue : MonoBehaviour, IInteractable
         }
     }
 
-    /// <summary>
-    /// Defines the behavior to execute when the player touches this NPC.
-    /// </summary>
     public void OnTouchingPlayer()
     {
     }
 
-    /// <summary>
-    /// Ends this NPC's dialogue when the player is no longer touching it.
-    /// </summary>
     public void OnNotTouchingPlayer()
     {
         if (dialogueManager != null)

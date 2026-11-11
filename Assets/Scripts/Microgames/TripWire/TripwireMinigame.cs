@@ -40,6 +40,10 @@ public class TripwireMinigame : MonoBehaviour, IMinigame
 
     private Vector3 dragOffset;
 
+    public AudioSource audioSource;
+
+    public AudioClip endSound;
+    public float volume = .25f;
     private void Awake()
     {
         CacheGuideImages();
@@ -173,6 +177,7 @@ public class TripwireMinigame : MonoBehaviour, IMinigame
 
         dragOffset = draggedEnd.position - pointerPosition;
         isDragging = true;
+        audioSource.PlayOneShot(endSound, volume);
     }
 
     public void DragWire(
@@ -286,6 +291,8 @@ public class TripwireMinigame : MonoBehaviour, IMinigame
 
     private void CompleteMinigame()
     {
+        audioSource.PlayOneShot(endSound, volume);
+
         StartGame source = currentSource;
 
         CloseMinigame();

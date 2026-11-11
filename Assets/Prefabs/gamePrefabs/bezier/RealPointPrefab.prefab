@@ -88,3 +88,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2863dc43d0899cb449b76ffd0946e246, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Point_Viz
+  movable: 1
+  movableColor: {r: 0.6533019, g: 0.3066038, b: 1, a: 1}
+  fixedColor: {r: 0.83921576, g: 0.83921576, b: 0.83921576, a: 1}
+  hoverScale: 1.1
+  hoverSpeed: 10
+  hoverColor: {r: 0.50212765, g: 0, b: 1, a: 1}
+  colorSpeed: 100

@@ -1,5 +1,7 @@
+
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class DialogueManager : MonoBehaviour
 {
@@ -9,6 +11,9 @@ public class DialogueManager : MonoBehaviour
 
     [Tooltip("The UI text component that displays the current speaker's name.")]
     public TMP_Text speakerText;
+
+    [Tooltip("The UI image that displays the current speaker's portrait.")]
+    public Image speakerPortrait;
 
     [Tooltip("The UI text component that displays the current dialogue line.")]
     public TMP_Text dialogueText;
@@ -25,21 +30,11 @@ public class DialogueManager : MonoBehaviour
         dialoguePanel.SetActive(false);
     }
 
-    /// <summary>
-    /// Checks whether the specified NPC currently has an active dialogue.
-    /// </summary>
-    /// <param name="npc">The NPC whose dialogue activity will be checked.</param>
-    /// <returns>True if the specified NPC is currently in dialogue; otherwise, false.</returns>
     public bool IsDialogueActiveFor(NPCDialogue npc)
     {
         return currentNPC == npc;
     }
 
-    /// <summary>
-    /// Starts a dialogue with the specified NPC and displays its first line.
-    /// If the NPC has no dialogue lines, the current dialogue is ended.
-    /// </summary>
-    /// <param name="npc">The NPC whose dialogue will be started.</param>
     public void StartDialogue(NPCDialogue npc)
     {
         if (npc.lines == null || npc.lines.Length == 0)
@@ -57,12 +52,6 @@ public class DialogueManager : MonoBehaviour
         ShowLine();
     }
 
-    /// <summary>
-    /// Advances the dialogue to the next line for the specified NPC.
-    /// Invokes the current line's completion event before advancing.
-    /// Ends the dialogue when no more lines remain.
-    /// </summary>
-    /// <param name="npc">The NPC whose dialogue will advance.</param>
     public void NextLine(NPCDialogue npc)
     {
         if (currentNPC != npc)
@@ -88,10 +77,6 @@ public class DialogueManager : MonoBehaviour
         ShowLine();
     }
 
-    /// <summary>
-    /// Ends the dialogue if the specified NPC is currently in dialogue.
-    /// </summary>
-    /// <param name="npc">The NPC whose dialogue should be ended.</param>
     public void EndDialogue(NPCDialogue npc)
     {
         if (currentNPC == npc)
@@ -121,13 +106,25 @@ public class DialogueManager : MonoBehaviour
             return;
         }
 
-        speakerText.text = line.speaker;
+        speakerText.text = string.IsNullOrWhiteSpace(line.speaker)
+            ? currentNPC.speakerName
+            : line.speaker;
+
+        if (speakerPortrait != null)
+        {
+            speakerPortrait.sprite = currentNPC.portrait;
+            speakerPortrait.enabled = currentNPC.portrait != null;
+        }
+
         dialogueText.text = line.text;
 
-        voiceSource.Stop();
-        voiceSource.clip = line.voiceLine;
+        if (voiceSource != null)
+        {
+            voiceSource.Stop();
+            voiceSource.clip = line.voiceLine;
 
-        if (line.voiceLine != null)
-            voiceSource.Play();
+            if (line.voiceLine != null)
+                voiceSource.Play();
+        }
     }
 }
