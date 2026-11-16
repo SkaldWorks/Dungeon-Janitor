@@ -9750,6 +9750,10 @@ PrefabInstance:
       value: -0.000000017227
       objectReference: {fileID: 0}
     - target: {fileID: 1077824723758767357, guid: a0660b5fa0620fc4992bc4e62bf4892e, type: 3}
+      propertyPath: saveId
+      value: abd22f9427a8493aa7890b251782025a
+      objectReference: {fileID: 0}
+    - target: {fileID: 1077824723758767357, guid: a0660b5fa0620fc4992bc4e62bf4892e, type: 3}
       propertyPath: minigame
       value: 
       objectReference: {fileID: 1026958083}
@@ -30025,6 +30029,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5099365333718401946, guid: 195f7ddb47c549646b8cb27fe01c9306, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5439056923339208801, guid: 195f7ddb47c549646b8cb27fe01c9306, type: 3}
+      propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5500365085270108047, guid: 195f7ddb47c549646b8cb27fe01c9306, type: 3}
