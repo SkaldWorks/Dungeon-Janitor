@@ -39,9 +39,6 @@ public class ReviveMinigame : MonoBehaviour, IMinigame
 
     public void StartMinigame(StartGame newSource)
     {
-        if (playing)
-            return;
-
         source = newSource;
         playing = true;
 

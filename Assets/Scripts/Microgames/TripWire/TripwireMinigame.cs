@@ -76,9 +76,6 @@ public class TripwireMinigame : MonoBehaviour, IMinigame
 
     public void StartMinigame(StartGame source)
     {
-        if (isPlaying || !ValidateSetup(source))
-            return;
-
         currentSource = source;
         nextGuideIndex = 0;
         isDragging = false;
